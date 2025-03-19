@@ -5,23 +5,13 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-/** @type {Map<string, any>} */
 const commands = new Map();
 
-/**
- * Registers a command.
- * @param {string} name - The command name.
- * @param {Function} execute - The command execution function.
- */
-export function registerCommand(name, execute) {
-    commands.set(name, execute);
-    console.log(`✅ Registered command: ${name}`);
+export function registerCommand(name, commandObject) {
+    console.log(`✅ Registering command: ${name}`);
+    commands.set(name, commandObject);
 }
 
-/**
- * Loads all commands from the `commands/` folder.
- * @returns {Promise<Map<string, any>>} - The loaded commands.
- */
 export async function loadCommands() {
     console.log('🔄 Loading commands...');
     const commandsDir = join(__dirname, 'commands');
@@ -40,7 +30,8 @@ export async function loadCommands() {
 
                 if (module.command && module.command.data && typeof module.command.data.toJSON === 'function') {
                     console.log(`✅ Command structure in ${file}:`, module.command);
-                    registerCommand(module.command.data.name, module.command.execute);
+                    commands.set(module.command.data.name, module.command);
+                    console.log(`✅ Registered command: ${module.command.data.name}`);
                 } else {
                     console.warn(`⚠️ Skipping ${file} - Invalid command structure.`);
                 }
@@ -54,10 +45,6 @@ export async function loadCommands() {
     return commands;
 }
 
-/**
- * Handles command execution when a user interacts with the bot.
- * @param {import('discord.js').ChatInputCommandInteraction} interaction - The interaction instance.
- */
 export async function handleCommand(interaction) {
     console.log(`🔹 Command received: /${interaction.commandName} by ${interaction.user.tag}`);
 
