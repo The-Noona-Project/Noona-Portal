@@ -1,11 +1,38 @@
 import { EmbedBuilder } from 'discord.js';
 import kavita from '../../kavita/kavita.mjs';
+import fs from 'fs';
+import path from 'path';
 
 export const setupLibraryNotifications = (client) => {
     const NOTIFICATION_CHANNEL_ID = process.env.NOTIFICATION_CHANNEL_ID;
     const CHECK_INTERVAL = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
+    const STORAGE_FILE = path.join(process.cwd(), 'data', 'notified-items.json');
     
-    const notifiedItemIds = new Set();
+    if (!fs.existsSync(path.join(process.cwd(), 'data'))) {
+        fs.mkdirSync(path.join(process.cwd(), 'data'), { recursive: true });
+    }
+    
+    let notifiedItemIds = new Set();
+    try {
+        if (fs.existsSync(STORAGE_FILE)) {
+            const data = JSON.parse(fs.readFileSync(STORAGE_FILE, 'utf8'));
+            notifiedItemIds = new Set(data);
+            console.log(`📂 Loaded ${notifiedItemIds.size} previously notified items`);
+        } else {
+            console.log('📂 No previous notifications file found, starting fresh');
+        }
+    } catch (error) {
+        console.error('❌ Error loading notification history:', error);
+    }
+    
+    function saveNotifiedItems() {
+        try {
+            const data = JSON.stringify(Array.from(notifiedItemIds));
+            fs.writeFileSync(STORAGE_FILE, data);
+        } catch (error) {
+            console.error('❌ Error saving notification history:', error);
+        }
+    }
     
     async function checkForNewAdditions() {
         const channel = client.channels.cache.get(NOTIFICATION_CHANNEL_ID);
@@ -65,6 +92,9 @@ export const setupLibraryNotifications = (client) => {
                 });
                 
                 await channel.send({ embeds: [embed] });
+                console.log(`✅ Sent notification about ${newItems.length} new items`);
+                
+                saveNotifiedItems();
             } else {
                 console.log('No items found in library response');
             }
@@ -81,6 +111,7 @@ export const setupLibraryNotifications = (client) => {
     
     return {
         stop: () => clearInterval(interval),
-        checkNow: checkForNewAdditions
+        checkNow: checkForNewAdditions,
+        getNotifiedCount: () => notifiedItemIds.size
     };
 }; 
