@@ -12,7 +12,7 @@ export const command = {
         ),
 
     async execute(interaction) {
-        await interaction.deferReply();
+        await interaction.deferReply({ ephemeral: true });
         const email = interaction.options.getString('email');
         console.log(`📡 Creating user in Kavita for email: ${email}`);
 
