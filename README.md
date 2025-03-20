@@ -60,16 +60,11 @@ Before installing, make sure you have:
 
 ### 🏗️ Docker Installation  
 
-1️⃣ **Clone the repository:**  
-```bash
-git clone https://github.com/The-Noona-Project/Noona-Portal.git
-cd Noona-Portal
-```
-2️⃣ **Pull the Docker image:**
+1️⃣ **Pull the Docker image:**
 ```bash
 docker pull captainpax/noona-portal
 ```
-3️⃣ **Run the container:**
+2️⃣ **Run the container:**
 ```bash
 docker run -d \
   --name='noona-portal' \
@@ -87,7 +82,7 @@ docker run -d \
   -e 'KAVITA_LIBRARY_IDS'='<library_ids>' \
   captainpax/noona-portal
 ```
-4️⃣ **Replace placeholders** (`<your_discord_token>`, etc.) with actual values.
+3️⃣ **Replace placeholders** (`<your_discord_token>`, etc.) with actual values.
 
 ---
 
