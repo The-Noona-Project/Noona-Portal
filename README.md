@@ -1,4 +1,3 @@
-```md
 # 🚀 Noona-Portal  
 
 Welcome to **Noona-Portal**, a multi-purpose, self-hosted **Discord bot** designed to integrate with [Kavita](https://www.kavitareader.com/), giving you seamless access to your comics and manga libraries directly from Discord.  
