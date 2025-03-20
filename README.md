@@ -100,7 +100,7 @@ docker run -d \
 | `NOTIFICATION_CHANNEL_ID` | **Required.** Channel ID for **library updates**. |
 | `KAVITA_URL`             | **Required.** URL to your **Kavita instance**. |
 | `KAVITA_API_KEY`         | **Required.** API key for **Kavita authentication**. |
-| `KAVITA_LIBRARY_IDS`     | **Optional.** Library IDs to give to new users. |
+| `KAVITA_LIBRARY_IDS`     | **Required.** Library IDs to give to new users. |
 
 📌 See `.env.example` for a full template.
 
