@@ -178,7 +178,7 @@ class KavitaAPI {
         
         const inviteData = {
             email: email,
-            roles: ["User"],
+            roles: ["User", "Login", "Change Password", "Bookmark"],
             libraries: libraryIds,
             ageRestriction: {
                 ageRating: 0,
