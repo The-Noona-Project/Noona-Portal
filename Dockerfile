@@ -1,6 +1,6 @@
 FROM ubuntu:latest
 LABEL org.opencontainers.image.source="https://github.com/the-noona-project/noona-portal"
-LABEL authors="CaptainPax"
+LABEL authors="the-noona-project"
 
 # Install necessary packages
 RUN apt update && apt install -y curl nodejs npm && rm -rf /var/lib/apt/lists/*
