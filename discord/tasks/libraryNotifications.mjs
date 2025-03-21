@@ -1,4 +1,4 @@
-import {EmbedBuilder} from 'discord.js';
+import {EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle} from 'discord.js';
 import kavita from '../../kavita/kavita.mjs';
 import fs from 'fs';
 import path from 'path';
@@ -22,6 +22,14 @@ export const setupLibraryNotifications = (client) => {
     const NOTIFICATION_CHANNEL_ID = process.env.NOTIFICATION_CHANNEL_ID;
     const CHECK_INTERVAL = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
     const STORAGE_FILE = path.join(process.cwd(), 'data', 'notified-items.json');
+    const ITEMS_PER_PAGE = 10;
+    
+    // Map to store batch data temporarily for pagination
+    // Key: batchId, Value: array of items
+    const batchStorage = new Map();
+    
+    // Cleanup old batches after 1 hour
+    const BATCH_TTL = 60 * 60 * 1000;
 
     if (!fs.existsSync(path.join(process.cwd(), 'data'))) {
         fs.mkdirSync(path.join(process.cwd(), 'data'), {recursive: true});
@@ -53,6 +61,69 @@ export const setupLibraryNotifications = (client) => {
         }
     }
 
+    function createPageEmbed(newItems, page, totalPages) {
+        const startIdx = (page - 1) * ITEMS_PER_PAGE;
+        const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, newItems.length);
+        const pageItems = newItems.slice(startIdx, endIdx);
+        
+        const embed = new EmbedBuilder()
+            .setTitle(`📚 New Additions to the Library! (Page ${page}/${totalPages})`)
+            .setColor(0x00FF00)
+            .setDescription(`Total new items: ${newItems.length}`)
+            .setTimestamp();
+
+        pageItems.forEach(item => {
+            const addedTime = new Date(item.lastChapterAdded);
+            
+            const fieldValue = [
+                `Added: ${addedTime.toLocaleString()}`,
+                `Library: ${item.libraryName || 'Unknown'}`
+            ].filter(Boolean).join('\n');
+
+            embed.addFields({
+                name: item.name,
+                value: fieldValue || 'No additional information available'
+            });
+        });
+        
+        return embed;
+    }
+    
+    function createNavigationRow(page, totalPages, batchId) {
+        const row = new ActionRowBuilder();
+        
+        if (totalPages > 1) {
+            if (page > 1) {
+                row.addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`library_prev_${batchId}_${page}`)
+                        .setLabel('Previous')
+                        .setStyle(ButtonStyle.Primary)
+                );
+            }
+            
+            if (page < totalPages) {
+                row.addComponents(
+                    new ButtonBuilder()
+                        .setCustomId(`library_next_${batchId}_${page}`)
+                        .setLabel('Next')
+                        .setStyle(ButtonStyle.Primary)
+                );
+            }
+        }
+        
+        return row;
+    }
+
+    function cleanupOldBatches() {
+        const now = Date.now();
+        for (const [batchId, data] of batchStorage.entries()) {
+            if (now - parseInt(batchId) > BATCH_TTL) {
+                batchStorage.delete(batchId);
+            }
+        }
+    }
+
     /**
      * Checks for new additions to the library, filters for new and recent items,
      * and sends a notification to a Discord channel.
@@ -72,6 +143,7 @@ export const setupLibraryNotifications = (client) => {
         try {
             const currentTime = Date.now();
             const lookbackTime = currentTime - (24 * 60 * 60 * 1000);
+            const batchId = currentTime.toString();
 
             const endpoint = `/api/Series/recently-added-v2`;
 
@@ -98,31 +170,33 @@ export const setupLibraryNotifications = (client) => {
                     return;
                 }
 
-                const embed = new EmbedBuilder()
-                    .setTitle('📚 New Additions to the Library!')
-                    .setColor(0x00FF00)
-                    .setTimestamp();
-
-                newItems.slice(0, 10).forEach(item => {
+                newItems.forEach(item => {
                     notifiedItemIds.add(item.id);
-
-                    const addedTime = new Date(item.lastChapterAdded);
-
-                    const fieldValue = [
-                        `Added: ${addedTime.toLocaleString()}`,
-                        `Library: ${item.libraryName || 'Unknown'}`
-                    ].filter(Boolean).join('\n');
-
-                    embed.addFields({
-                        name: item.name,
-                        value: fieldValue || 'No additional information available'
-                    });
                 });
-
-                await channel.send({embeds: [embed]});
-                console.log(`✅ Sent notification about ${newItems.length} new items`);
-
+                
+                batchStorage.set(batchId, newItems);
+                
+                setTimeout(() => {
+                    if (batchStorage.has(batchId)) {
+                        batchStorage.delete(batchId);
+                    }
+                }, BATCH_TTL);
+                
+                const totalPages = Math.ceil(newItems.length / ITEMS_PER_PAGE);
+                
+                const embed = createPageEmbed(newItems, 1, totalPages);
+                const navRow = createNavigationRow(1, totalPages, batchId);
+                
+                const components = totalPages > 1 ? [navRow] : [];
+                await channel.send({
+                    embeds: [embed],
+                    components: components
+                });
+                
+                console.log(`✅ Sent notification about ${newItems.length} new items (${totalPages} pages)`);
                 saveNotifiedItems();
+                
+                cleanupOldBatches();
             } else {
                 console.log('No items found in library response');
             }
@@ -137,7 +211,8 @@ export const setupLibraryNotifications = (client) => {
 
     checkForNewAdditions();
 
-    return {
+    // Need To Export For Button Handler
+    const libraryNotificationService = {
         /**
          * Stops the library notification service by clearing the interval.
          * @example
@@ -162,6 +237,47 @@ export const setupLibraryNotifications = (client) => {
          * const notifications = setupLibraryNotifications(client);
          * console.log(`Notified items count: ${notifications.getNotifiedCount()}`);
          */
-        getNotifiedCount: () => notifiedItemIds.size
+        getNotifiedCount: () => notifiedItemIds.size,
+        
+        async handlePaginationButton(interaction) {
+            try {
+                await interaction.deferUpdate();
+                
+                const customId = interaction.customId;
+                const parts = customId.split('_');
+                const action = parts[1];
+                const batchId = parts[2];
+                const currentPage = parseInt(parts[3]);
+                
+                let newPage = currentPage;
+                if (action === 'next') newPage++;
+                else if (action === 'prev') newPage--;
+                
+                const batchItems = batchStorage.get(batchId);
+                if (!batchItems) {
+                    return await interaction.followUp({
+                        content: '⚠️ This navigation has expired. The data is no longer available.',
+                        ephemeral: true
+                    });
+                }
+                
+                const totalPages = Math.ceil(batchItems.length / ITEMS_PER_PAGE);
+                
+                const newEmbed = createPageEmbed(batchItems, newPage, totalPages);
+                
+                const newNavRow = createNavigationRow(newPage, totalPages, batchId);
+                
+                await interaction.editReply({
+                    embeds: [newEmbed],
+                    components: [newNavRow]
+                });
+            } catch (error) {
+                console.error('Error handling pagination:', error);
+            }
+        }
     };
+    
+    client.libraryNotifications = libraryNotificationService;
+    
+    return libraryNotificationService;
 }; 

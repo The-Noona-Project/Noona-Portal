@@ -79,6 +79,16 @@ export async function setupDiscord(client) {
             } else if (customId.startsWith('series_')) {
                 const seriesId = customId.split('_')[1];
                 await handleSeriesSelection(interaction, seriesId);
+            } else if (customId.startsWith('library_next_') || 
+                       customId.startsWith('library_prev_')) {
+                if (client.libraryNotifications) {
+                    await client.libraryNotifications.handlePaginationButton(interaction);
+                } else {
+                    await interaction.reply({
+                        content: '⚠️ Library notification service not available.',
+                        ephemeral: true
+                    });
+                }
             }
         }
     });
