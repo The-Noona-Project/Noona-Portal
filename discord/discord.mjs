@@ -66,6 +66,15 @@ export async function setupDiscord(client) {
                 console.error(`Error executing ${interaction.commandName}:`, error);
                 await interaction.reply({ content: '⚠️ An error occurred while executing this command!', ephemeral: true });
             }
+        } else if (interaction.isAutocomplete()) {
+            const command = client.commands.get(interaction.commandName);
+            if (!command || !command.autocomplete) return;
+            
+            try {
+                await command.autocomplete(interaction);
+            } catch (error) {
+                console.error(`Error handling autocomplete for ${interaction.commandName}:`, error);
+            }
         } else if (interaction.isButton()) {
             const customId = interaction.customId;
 
