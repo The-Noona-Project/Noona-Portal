@@ -62,32 +62,40 @@ export const setupLibraryNotifications = (client) => {
         }
     }
 
-    function createPageEmbed(newItems, page, totalPages) {
-        const startIdx = (page - 1) * ITEMS_PER_PAGE;
-        const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, newItems.length);
-        const pageItems = newItems.slice(startIdx, endIdx);
-
-        const embed = new EmbedBuilder()
-            .setTitle(`📚 New Additions to the Library! (Page ${page}/${totalPages})`)
-            .setColor(0x00FF00)
-            .setDescription(`Total new items: ${newItems.length}`)
-            .setTimestamp();
-
-        pageItems.forEach(item => {
-            const addedTime = new Date(item.lastChapterAdded);
-
-            const fieldValue = [
-                `Added: ${addedTime.toLocaleString()}`,
-                `Library: ${item.libraryName || 'Unknown'}`
-            ].filter(Boolean).join('\n');
-
-            embed.addFields({
-                name: item.name,
-                value: fieldValue || 'No additional information available'
+    function createEmbeds(newItems) {
+        const ITEMS_PER_EMBED = 10;
+        const totalEmbeds = Math.ceil(newItems.length / ITEMS_PER_EMBED);
+        const embeds = [];
+        
+        for (let i = 0; i < totalEmbeds; i++) {
+            const startIdx = i * ITEMS_PER_EMBED;
+            const endIdx = Math.min(startIdx + ITEMS_PER_EMBED, newItems.length);
+            const pageItems = newItems.slice(startIdx, endIdx);
+            
+            const embed = new EmbedBuilder()
+                .setTitle(`📚 New Additions to the Library! (${i+1}/${totalEmbeds})`)
+                .setColor(0x00FF00)
+                .setDescription(`Total new items: ${newItems.length}`)
+                .setTimestamp();
+                
+            pageItems.forEach(item => {
+                const addedTime = new Date(item.lastChapterAdded);
+                
+                const fieldValue = [
+                    `Added: ${addedTime.toLocaleString()}`,
+                    `Library: ${item.libraryName || 'Unknown'}`
+                ].filter(Boolean).join('\n');
+                
+                embed.addFields({
+                    name: item.name,
+                    value: fieldValue || 'No additional information available'
+                });
             });
-        });
-
-        return embed;
+            
+            embeds.push(embed);
+        }
+        
+        return embeds;
     }
 
     function createNavigationRow(page, totalPages, batchId) {
@@ -175,26 +183,18 @@ export const setupLibraryNotifications = (client) => {
                     notifiedItemIds.add(item.id);
                 });
 
-                batchStorage.set(batchId, newItems);
+                const embeds = createEmbeds(newItems);
 
-                setTimeout(() => {
-                    if (batchStorage.has(batchId)) {
-                        batchStorage.delete(batchId);
-                    }
-                }, BATCH_TTL);
+                // Discord allows up to 10 embeds per message
+                const MAX_EMBEDS_PER_MESSAGE = 10;
 
-                const totalPages = Math.ceil(newItems.length / ITEMS_PER_PAGE);
+                // Split embeds into chunks if needed
+                for (let i = 0; i < embeds.length; i += MAX_EMBEDS_PER_MESSAGE) {
+                    const embedChunk = embeds.slice(i, i + MAX_EMBEDS_PER_MESSAGE);
+                    await channel.send({ embeds: embedChunk });
+                }
 
-                const embed = createPageEmbed(newItems, 1, totalPages);
-                const navRow = createNavigationRow(1, totalPages, batchId);
-
-                const components = totalPages > 1 ? [navRow] : [];
-                await channel.send({
-                    embeds: [embed],
-                    components: components
-                });
-
-                console.log(`✅ Sent notification about ${newItems.length} new items (${totalPages} pages)`);
+                console.log(`✅ Sent notification about ${newItems.length} new items (${embeds.length} embeds)`);
                 saveNotifiedItems();
 
                 cleanupOldBatches();
@@ -264,12 +264,12 @@ export const setupLibraryNotifications = (client) => {
 
                 const totalPages = Math.ceil(batchItems.length / ITEMS_PER_PAGE);
 
-                const newEmbed = createPageEmbed(batchItems, newPage, totalPages);
+                const newEmbeds = createEmbeds(batchItems);
 
                 const newNavRow = createNavigationRow(newPage, totalPages, batchId);
 
                 await interaction.editReply({
-                    embeds: [newEmbed],
+                    embeds: [newEmbeds[newPage - 1]],
                     components: [newNavRow]
                 });
             } catch (error) {
