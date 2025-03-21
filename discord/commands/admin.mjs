@@ -37,17 +37,29 @@ export const command = {
         .addSubcommand(subcommand =>
             subcommand
                 .setName('server-maintenance')
-                .setDescription('Run server maintenance tasks')
+                .setDescription('Perform server maintenance tasks')
                 .addStringOption(option =>
                     option.setName('task')
-                        .setDescription('Maintenance task to run')
+                        .setDescription('Maintenance task to perform')
                         .setRequired(true)
                         .addChoices(
-                            {name: 'Clear Cache', value: 'clear-cache'},
-                            {name: 'Cleanup', value: 'cleanup'},
-                            {name: 'Database Backup', value: 'backup-db'},
-                            {name: 'Analyze Files', value: 'analyze-files'}
+                            { name: 'Clear Cache', value: 'clear-cache' },
+                            { name: 'Cleanup', value: 'cleanup' },
+                            { name: 'Database Backup', value: 'backup-db' },
+                            { name: 'Scan All Libraries', value: 'scan-libraries' },
+                            { name: 'Scan Single Library', value: 'scan-library' }
                         )
+                )
+                .addStringOption(option =>
+                    option.setName('library')
+                        .setDescription('Library name or ID to scan (only used with Scan Single Library)')
+                        .setRequired(false)
+                        .setAutocomplete(true)
+                )
+                .addBooleanOption(option =>
+                    option.setName('force')
+                        .setDescription('Force full scan, ignore optimizations (only used with Scan Single Library)')
+                        .setRequired(false)
                 )
         ),
 
@@ -178,18 +190,90 @@ export const command = {
                     endpoint = '/api/Server/backup-db';
                     taskName = 'Database Backup';
                     break;
-                case 'analyze-files':
-                    endpoint = '/api/Server/analyze-files';
-                    taskName = 'Analyze Files';
+                case 'scan-libraries':
+                    try {
+                        const result = await kavita.scanAllLibraries();
+                        return await interaction.editReply(`✅ Scan Libraries task started successfully.`);
+                    } catch (error) {
+                        console.error('Error scanning libraries:', error);
+                        return await interaction.editReply(`❌ Failed to scan libraries.`);
+                    }
+                    break;
+                case 'scan-library':
+                    const libraryQuery = interaction.options.getString('library');
+                    if (!libraryQuery) {
+                        return await interaction.editReply(`❌ Library name or ID is required for scanning a single library.`);
+                    }
+                    
+                    try {
+                        const libraries = await kavita.getLibraries();
+                        
+                        if (!libraries || libraries.length === 0) {
+                            return await interaction.editReply('❌ No libraries found.');
+                        }
+                        
+                        let libraryToScan = null;
+                        
+                        if (!isNaN(libraryQuery)) {
+                            const libraryId = parseInt(libraryQuery);
+                            libraryToScan = libraries.find(lib => lib.id === libraryId);
+                        } else {
+                            libraryToScan = libraries.find(lib => 
+                                lib.name.toLowerCase() === libraryQuery.toLowerCase());
+                        }
+                        
+                        if (!libraryToScan) {
+                            return await interaction.editReply(`❌ Library "${libraryQuery}" not found.`);
+                        }
+                        
+                        const forceScan = interaction.options.getBoolean('force') ?? false;
+                        const url = `/api/Library/scan?libraryId=${libraryToScan.id}&force=${forceScan}`;
+                        await kavita.fetchData(url, 'POST');
+                        
+                        const scanTypeText = forceScan ? "force scan" : "scan";
+                        return await interaction.editReply(`✅ ${scanTypeText} started for library: ${libraryToScan.name}`);
+                    } catch (error) {
+                        console.error('Error scanning library:', error);
+                        return await interaction.editReply(`❌ Failed to scan library: ${error.message}`);
+                    }
                     break;
             }
 
+            if (endpoint) {
+                try {
+                    await kavita.fetchData(endpoint, 'POST');
+                    await interaction.editReply(`✅ ${taskName} task started successfully.`);
+                } catch (error) {
+                    console.error(`Error running ${taskName}:`, error);
+                    await interaction.editReply(`❌ Failed to run ${taskName} task.`);
+                }
+            }
+        }
+    },
+    
+    async autocomplete(interaction) {
+        const subcommand = interaction.options.getSubcommand();
+        const focusedOption = interaction.options.getFocused(true);
+        
+        if (subcommand === 'server-maintenance' && focusedOption.name === 'library') {
             try {
-                await kavita.fetchData(endpoint, 'POST');
-                await interaction.editReply(`✅ ${taskName} task started successfully.`);
+                const libraries = await kavita.getLibraries();
+                const focusedValue = focusedOption.value.toLowerCase();
+                
+                const filtered = libraries
+                    .filter(lib => lib.name.toLowerCase().includes(focusedValue) || 
+                                  lib.id.toString().includes(focusedValue))
+                    .slice(0, 25);
+                    
+                await interaction.respond(
+                    filtered.map(lib => ({
+                        name: `${lib.name} (ID: ${lib.id})`,
+                        value: lib.id.toString()
+                    }))
+                );
             } catch (error) {
-                console.error(`Error running ${taskName}:`, error);
-                await interaction.editReply(`❌ Failed to run ${taskName} task.`);
+                console.error('Error during library autocomplete:', error);
+                await interaction.respond([]);
             }
         }
     }

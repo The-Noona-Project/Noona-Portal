@@ -66,6 +66,15 @@ export async function setupDiscord(client) {
                 console.error(`Error executing ${interaction.commandName}:`, error);
                 await interaction.reply({ content: '⚠️ An error occurred while executing this command!', ephemeral: true });
             }
+        } else if (interaction.isAutocomplete()) {
+            const command = client.commands.get(interaction.commandName);
+            if (!command || !command.autocomplete) return;
+            
+            try {
+                await command.autocomplete(interaction);
+            } catch (error) {
+                console.error(`Error handling autocomplete for ${interaction.commandName}:`, error);
+            }
         } else if (interaction.isButton()) {
             const customId = interaction.customId;
 
@@ -79,6 +88,16 @@ export async function setupDiscord(client) {
             } else if (customId.startsWith('series_')) {
                 const seriesId = customId.split('_')[1];
                 await handleSeriesSelection(interaction, seriesId);
+            } else if (customId.startsWith('library_next_') || 
+                       customId.startsWith('library_prev_')) {
+                if (client.libraryNotifications) {
+                    await client.libraryNotifications.handlePaginationButton(interaction);
+                } else {
+                    await interaction.reply({
+                        content: '⚠️ Library notification service not available.',
+                        ephemeral: true
+                    });
+                }
             }
         }
     });

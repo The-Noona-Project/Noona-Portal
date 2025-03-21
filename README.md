@@ -1,4 +1,3 @@
-```md
 # 🚀 Noona-Portal  
 
 Welcome to **Noona-Portal**, a multi-purpose, self-hosted **Discord bot** designed to integrate with [Kavita](https://www.kavitareader.com/), giving you seamless access to your comics and manga libraries directly from Discord.  
@@ -61,16 +60,11 @@ Before installing, make sure you have:
 
 ### 🏗️ Docker Installation  
 
-1️⃣ **Clone the repository:**  
-```bash
-git clone https://github.com/The-Noona-Project/Noona-Portal.git
-cd Noona-Portal
-```
-2️⃣ **Pull the Docker image:**
+1️⃣ **Pull the Docker image:**
 ```bash
 docker pull captainpax/noona-portal
 ```
-3️⃣ **Run the container:**
+2️⃣ **Run the container:**
 ```bash
 docker run -d \
   --name='noona-portal' \
@@ -88,7 +82,7 @@ docker run -d \
   -e 'KAVITA_LIBRARY_IDS'='<library_ids>' \
   captainpax/noona-portal
 ```
-4️⃣ **Replace placeholders** (`<your_discord_token>`, etc.) with actual values.
+3️⃣ **Replace placeholders** (`<your_discord_token>`, etc.) with actual values.
 
 ---
 
@@ -106,7 +100,7 @@ docker run -d \
 | `NOTIFICATION_CHANNEL_ID` | **Required.** Channel ID for **library updates**. |
 | `KAVITA_URL`             | **Required.** URL to your **Kavita instance**. |
 | `KAVITA_API_KEY`         | **Required.** API key for **Kavita authentication**. |
-| `KAVITA_LIBRARY_IDS`     | **Optional.** Library IDs to give to new users. |
+| `KAVITA_LIBRARY_IDS`     | **Required.** Library IDs to give to new users. |
 
 📌 See `.env.example` for a full template.
 
