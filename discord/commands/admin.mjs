@@ -46,7 +46,7 @@ export const command = {
                             {name: 'Clear Cache', value: 'clear-cache'},
                             {name: 'Cleanup', value: 'cleanup'},
                             {name: 'Database Backup', value: 'backup-db'},
-                            {name: 'Analyze Files', value: 'analyze-files'}
+                            {name: 'Scan Libraries', value: 'scan-libraries'}
                         )
                 )
         ),
@@ -178,18 +178,25 @@ export const command = {
                     endpoint = '/api/Server/backup-db';
                     taskName = 'Database Backup';
                     break;
-                case 'analyze-files':
-                    endpoint = '/api/Server/analyze-files';
-                    taskName = 'Analyze Files';
+                case 'scan-libraries':
+                    try {
+                        const result = await kavita.scanAllLibraries();
+                        return await interaction.editReply(`✅ Scan Libraries task started successfully.`);
+                    } catch (error) {
+                        console.error('Error scanning libraries:', error);
+                        return await interaction.editReply(`❌ Failed to scan libraries.`);
+                    }
                     break;
             }
 
-            try {
-                await kavita.fetchData(endpoint, 'POST');
-                await interaction.editReply(`✅ ${taskName} task started successfully.`);
-            } catch (error) {
-                console.error(`Error running ${taskName}:`, error);
-                await interaction.editReply(`❌ Failed to run ${taskName} task.`);
+            if (endpoint) {
+                try {
+                    await kavita.fetchData(endpoint, 'POST');
+                    await interaction.editReply(`✅ ${taskName} task started successfully.`);
+                } catch (error) {
+                    console.error(`Error running ${taskName}:`, error);
+                    await interaction.editReply(`❌ Failed to run ${taskName} task.`);
+                }
             }
         }
     }

@@ -314,6 +314,36 @@ class KavitaAPI {
             return null;
         }
     }
+
+    async scanAllLibraries() {
+        console.log(`🔍 Initiating scan for all configured libraries...`);
+        
+        let libraryIds = [];
+        if (process.env.KAVITA_LIBRARY_IDS) {
+            try {
+                libraryIds = process.env.KAVITA_LIBRARY_IDS.split(',').map(id => parseInt(id.trim(), 10));
+                console.log(`📚 Scanning library IDs: ${libraryIds.join(', ')}`);
+            } catch (error) {
+                console.error('❌ Error parsing KAVITA_LIBRARY_IDS:', error.message);
+                return null;
+            }
+        } else {
+            console.error('❌ No KAVITA_LIBRARY_IDS found in environment variables.');
+            return null;
+        }
+        
+        if (libraryIds.length === 0) {
+            console.error('❌ No valid library IDs to scan.');
+            return null;
+        }
+        
+        const requestBody = {
+            ids: libraryIds,
+            force: true
+        };
+        
+        return await this.fetchData('/api/Library/scan-multiple', 'POST', requestBody);
+    }
 }
 
 export default new KavitaAPI();
