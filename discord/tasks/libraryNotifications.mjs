@@ -20,14 +20,15 @@ import path from 'path';
  */
 export const setupLibraryNotifications = (client) => {
     const NOTIFICATION_CHANNEL_ID = process.env.NOTIFICATION_CHANNEL_ID;
-    const CHECK_INTERVAL = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
+    const CHECK_INTERVAL_HOURS = parseInt(process.env.CHECK_INTERVAL_HOURS || '12', 10);
+    const CHECK_INTERVAL = CHECK_INTERVAL_HOURS * 60 * 60 * 1000; // Interval in milliseconds
     const STORAGE_FILE = path.join(process.cwd(), 'data', 'notified-items.json');
     const ITEMS_PER_PAGE = 10;
-    
+
     // Map to store batch data temporarily for pagination
     // Key: batchId, Value: array of items
     const batchStorage = new Map();
-    
+
     // Cleanup old batches after 1 hour
     const BATCH_TTL = 60 * 60 * 1000;
 
@@ -65,7 +66,7 @@ export const setupLibraryNotifications = (client) => {
         const startIdx = (page - 1) * ITEMS_PER_PAGE;
         const endIdx = Math.min(startIdx + ITEMS_PER_PAGE, newItems.length);
         const pageItems = newItems.slice(startIdx, endIdx);
-        
+
         const embed = new EmbedBuilder()
             .setTitle(`📚 New Additions to the Library! (Page ${page}/${totalPages})`)
             .setColor(0x00FF00)
@@ -74,7 +75,7 @@ export const setupLibraryNotifications = (client) => {
 
         pageItems.forEach(item => {
             const addedTime = new Date(item.lastChapterAdded);
-            
+
             const fieldValue = [
                 `Added: ${addedTime.toLocaleString()}`,
                 `Library: ${item.libraryName || 'Unknown'}`
@@ -85,13 +86,13 @@ export const setupLibraryNotifications = (client) => {
                 value: fieldValue || 'No additional information available'
             });
         });
-        
+
         return embed;
     }
-    
+
     function createNavigationRow(page, totalPages, batchId) {
         const row = new ActionRowBuilder();
-        
+
         if (totalPages > 1) {
             if (page > 1) {
                 row.addComponents(
@@ -101,7 +102,7 @@ export const setupLibraryNotifications = (client) => {
                         .setStyle(ButtonStyle.Primary)
                 );
             }
-            
+
             if (page < totalPages) {
                 row.addComponents(
                     new ButtonBuilder()
@@ -111,7 +112,7 @@ export const setupLibraryNotifications = (client) => {
                 );
             }
         }
-        
+
         return row;
     }
 
@@ -173,29 +174,29 @@ export const setupLibraryNotifications = (client) => {
                 newItems.forEach(item => {
                     notifiedItemIds.add(item.id);
                 });
-                
+
                 batchStorage.set(batchId, newItems);
-                
+
                 setTimeout(() => {
                     if (batchStorage.has(batchId)) {
                         batchStorage.delete(batchId);
                     }
                 }, BATCH_TTL);
-                
+
                 const totalPages = Math.ceil(newItems.length / ITEMS_PER_PAGE);
-                
+
                 const embed = createPageEmbed(newItems, 1, totalPages);
                 const navRow = createNavigationRow(1, totalPages, batchId);
-                
+
                 const components = totalPages > 1 ? [navRow] : [];
                 await channel.send({
                     embeds: [embed],
                     components: components
                 });
-                
+
                 console.log(`✅ Sent notification about ${newItems.length} new items (${totalPages} pages)`);
                 saveNotifiedItems();
-                
+
                 cleanupOldBatches();
             } else {
                 console.log('No items found in library response');
@@ -238,21 +239,21 @@ export const setupLibraryNotifications = (client) => {
          * console.log(`Notified items count: ${notifications.getNotifiedCount()}`);
          */
         getNotifiedCount: () => notifiedItemIds.size,
-        
+
         async handlePaginationButton(interaction) {
             try {
                 await interaction.deferUpdate();
-                
+
                 const customId = interaction.customId;
                 const parts = customId.split('_');
                 const action = parts[1];
                 const batchId = parts[2];
                 const currentPage = parseInt(parts[3]);
-                
+
                 let newPage = currentPage;
                 if (action === 'next') newPage++;
                 else if (action === 'prev') newPage--;
-                
+
                 const batchItems = batchStorage.get(batchId);
                 if (!batchItems) {
                     return await interaction.followUp({
@@ -260,13 +261,13 @@ export const setupLibraryNotifications = (client) => {
                         ephemeral: true
                     });
                 }
-                
+
                 const totalPages = Math.ceil(batchItems.length / ITEMS_PER_PAGE);
-                
+
                 const newEmbed = createPageEmbed(batchItems, newPage, totalPages);
-                
+
                 const newNavRow = createNavigationRow(newPage, totalPages, batchId);
-                
+
                 await interaction.editReply({
                     embeds: [newEmbed],
                     components: [newNavRow]
@@ -276,8 +277,8 @@ export const setupLibraryNotifications = (client) => {
             }
         }
     };
-    
+
     client.libraryNotifications = libraryNotificationService;
-    
+
     return libraryNotificationService;
-}; 
+};
