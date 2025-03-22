@@ -72,6 +72,7 @@ docker run -d \
   -e TZ="America/Los_Angeles" \
   -e HOST_CONTAINERNAME="noona-portal" \
   -e 'DISCORD_TOKEN'='<your_discord_token>' \
+  -e 'DISCORD_CLIENT_ID'='<your_discord_client_id>' \
   -e 'REQUIRED_GUILD_ID'='<your_guild_id>' \
   -e 'REQUIRED_ROLE_ADMIN'='<your_admin_role_id>' \
   -e 'REQUIRED_ROLE_MOD'='<your_mod_role_id>' \
@@ -80,6 +81,7 @@ docker run -d \
   -e 'KAVITA_URL'='<your_kavita_url>' \
   -e 'KAVITA_API_KEY'='<your_kavita_api_key>' \
   -e 'KAVITA_LIBRARY_IDS'='<library_ids>' \
+  -e 'KAVITA_LOOKBACK_HOURS'='<lookback_hours>' \
   captainpax/noona-portal
 ```
 3️⃣ **Replace placeholders** (`<your_discord_token>`, etc.) with actual values.
@@ -93,6 +95,7 @@ docker run -d \
 | Variable                  | Description                                   |
 |---------------------------|-----------------------------------------------|
 | `DISCORD_TOKEN`           | **Required.** Your **Discord bot token**.    |
+| `DISCORD_CLIENT_ID`       | **Required.** Your **Discord application ID**.|
 | `REQUIRED_GUILD_ID`       | **Required.** ID of your **Discord server**. |
 | `REQUIRED_ROLE_ADMIN`     | **Required.** Role ID for **Admin commands**. |
 | `REQUIRED_ROLE_MOD`       | **Optional.** Role ID for **Moderator access**. |
@@ -101,6 +104,7 @@ docker run -d \
 | `KAVITA_URL`             | **Required.** URL to your **Kavita instance**. |
 | `KAVITA_API_KEY`         | **Required.** API key for **Kavita authentication**. |
 | `KAVITA_LIBRARY_IDS`     | **Required.** Library IDs to give to new users. |
+| `KAVITA_LOOKBACK_HOURS`   | Hours to look back for new items. Default: 168 (7 days). |
 
 📌 See `.env.example` for a full template.
 
