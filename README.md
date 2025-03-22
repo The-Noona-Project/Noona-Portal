@@ -66,9 +66,11 @@ docker pull captainpax/noona-portal
 ```
 2️⃣ **Run the container:**
 ```bash
+docker network create noona-network
+
 docker run -d \
   --name='noona-portal' \
-  --net='bridge' \
+  --net='noona-network' \
   -e TZ="America/Los_Angeles" \
   -e HOST_CONTAINERNAME="noona-portal" \
   -e 'DISCORD_TOKEN'='<your_discord_token>' \
@@ -82,6 +84,8 @@ docker run -d \
   -e 'KAVITA_API_KEY'='<your_kavita_api_key>' \
   -e 'KAVITA_LIBRARY_IDS'='<library_ids>' \
   -e 'KAVITA_LOOKBACK_HOURS'='<lookback_hours>' \
+  -e 'VAULT_URL'='http://noona-vault:3120' \
+  -e 'VAULT_JWT'='super-secret-key' \
   captainpax/noona-portal
 ```
 3️⃣ **Replace placeholders** (`<your_discord_token>`, etc.) with actual values.
@@ -104,7 +108,10 @@ docker run -d \
 | `KAVITA_URL`             | **Required.** URL to your **Kavita instance**. |
 | `KAVITA_API_KEY`         | **Required.** API key for **Kavita authentication**. |
 | `KAVITA_LIBRARY_IDS`     | **Required.** Library IDs to give to new users. |
-| `KAVITA_LOOKBACK_HOURS`   | Hours to look back for new items. Default: 168 (7 days). |
+| `KAVITA_LOOKBACK_HOURS`   | **Required.** Hours to look back for new items. Default: 168 (7 days). |
+| `VAULT_URL`              | **Required.** REST endpoint for Noona-Vault service. |
+| `VAULT_JWT`              | **Required.** JWT for authenticating with Vault. |
+
 
 📌 See `.env.example` for a full template.
 

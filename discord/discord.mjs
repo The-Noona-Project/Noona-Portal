@@ -3,6 +3,7 @@
 import { Client, GatewayIntentBits, Events } from 'discord.js';
 import { loadCommands, registerCommands, getCommandCount } from './commandManager.mjs';
 import { hasRequiredRole } from './roleManager.mjs';
+import { handleLibrarySelection, handleSeriesPage, handleSeriesSelection } from './commands/scan.mjs';
 
 const client = new Client({
     intents: [
@@ -70,17 +71,17 @@ export async function setupDiscord() {
                         const scan = client.commands.get('scan');
                         if (!scan) return;
 
-                        if (prefix === 'scan') {
+                        if (prefix === 'scan' && args.length === 0) {
                             await scan.execute(interaction); // Return to library selection
                         } else if (prefix === 'series' && args[0] === 'page') {
                             const [, libraryId, page] = args;
-                            await scan.handleSeriesPage(interaction, libraryId, parseInt(page), false);
-                        } else if (prefix === 'scan') {
+                            await handleSeriesPage(interaction, libraryId, parseInt(page), false);
+                        } else if (prefix === 'scan' && args.length > 0) {
                             const libraryId = args[0];
-                            await scan.handleLibrarySelection(interaction, libraryId);
+                            await handleLibrarySelection(interaction, libraryId);
                         } else if (prefix === 'series') {
                             const seriesId = args[0];
-                            await scan.handleSeriesSelection(interaction, seriesId);
+                            await handleSeriesSelection(interaction, seriesId);
                         }
                     } catch (err) {
                         console.error(`❌ Button interaction failed:`, err);
