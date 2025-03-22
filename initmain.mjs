@@ -1,45 +1,87 @@
-/**
- * Initializes the environment variables, starts the Discord client, and sets up the bot.
- */
+// ✅ /initmain.mjs — Boot logic for Noona-Portal
 
-// Import the required modules
-import {Client, GatewayIntentBits} from 'discord.js';
-import {setupDiscord} from './discord/discord.mjs';
 import dotenv from 'dotenv';
+import chalk from 'chalk';
+import Table from 'cli-table3';
 
-// Load environment variables from the .env file
+import { authenticateWithKavita } from './kavita/kavita.mjs';
+import { setupDiscord } from './discord/discord.mjs';
+import { setupLibraryNotifications } from './discord/tasks/libraryNotifications.mjs';
+import { getVaultToken } from './noona/vault.mjs';
+
 dotenv.config();
 
-/**
- * Entry point to start the Noona-Portal bot.
- *
- * This script initializes a Discord.js client with necessary intents and sets up the bot
- * using the `setupDiscord` function. If the bot fails to set up, the process exits with
- * an error.
- *
- * @example
- * // To run this file, ensure you have a .env file with DISCORD_TOKEN
- * // and execute the script with Node.js:
- * //
- * // node index.js
- */
-console.log('🚀 Starting Noona-Portal...');
+console.log('');
+console.log(chalk.bold.cyan('[Noona-Portal] 🚀 Booting up...'));
+console.log('');
 
-// Create a Discord client instance with the necessary intents
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-    ],
-});
+let vaultToken = null;
+let discordClient = null;
+let kavitaStatus = false;
 
-/**
- * Sets up the bot using the `setupDiscord` function.
- * If an error occurs during setup, it will log the error and exit the process.
- */
-setupDiscord(client)
-    .catch(error => {
-        console.error('❌ Failed to setup Discord bot:', error);
-        process.exit(1);
+(async () => {
+    // Step 1: Get Vault token
+    process.stdout.write(chalk.gray('🔐 Requesting Vault token... '));
+    try {
+        vaultToken = await getVaultToken();
+        console.log(chalk.green('OK'));
+    } catch (err) {
+        console.log(chalk.red('FAIL'));
+        console.error(chalk.red('[Vault Auth] ❌ Failed to fetch JWT token from Vault:'), err.message);
+    }
+
+    // Step 2: Initialize Discord client
+    try {
+        console.log(chalk.gray('🤖 Starting Discord client...'));
+        discordClient = await setupDiscord();
+    } catch (err) {
+        console.log(chalk.red('FAIL'));
+        console.error(chalk.red('❌ Discord bot failed to initialize:'), err.message);
+    }
+
+    // Step 3: Start Library Notification system
+    try {
+        if (discordClient) {
+            setupLibraryNotifications(discordClient);
+        } else {
+            console.log(chalk.yellow('⚠️  Discord client is not ready. Notifications skipped.'));
+        }
+    } catch (err) {
+        console.error(chalk.red('❌ Notification system failed to initialize:'), err.message);
+    }
+
+    // Step 4: Authenticate with Kavita
+    try {
+        console.log(chalk.gray('🔄 Authenticating with Kavita API...'));
+        await authenticateWithKavita();
+        kavitaStatus = true;
+    } catch (err) {
+        console.error(chalk.red('❌ Kavita authentication failed:'), err.message);
+    }
+
+    // Boot Summary
+    console.log('');
+    console.log(chalk.bold.cyan('[Noona-Portal] 🧩 Boot Summary\n'));
+
+    const bootTable = new Table({
+        head: ['Component', 'Info', 'Status'],
+        colWidths: [18, 42, 14],
     });
+
+    bootTable.push(
+        ['Vault Auth', vaultToken ? 'Token received successfully' : 'Token is null', vaultToken ? '🟢 Ready' : '🔴 Failed'],
+        ['Discord Bot', discordClient ? 'Client logged in and ready' : 'Initialization failed', discordClient ? '🟢 Ready' : '🔴 Failed'],
+        ['Kavita API', kavitaStatus ? 'Authenticated successfully' : 'Auth failed', kavitaStatus ? '🟢 Ready' : '🔴 Failed']
+    );
+
+    console.log(bootTable.toString());
+    console.log('');
+
+    if (!vaultToken || !discordClient || !kavitaStatus) {
+        console.log(chalk.yellow('⚠️  One or more components failed to start.'));
+    } else {
+        console.log(chalk.bold.green('🧠  Noona-Portal is online. All systems go.'));
+    }
+
+    console.log('');
+})();
