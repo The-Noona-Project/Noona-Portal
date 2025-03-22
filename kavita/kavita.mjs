@@ -153,15 +153,18 @@ class KavitaAPI {
         }
     }
 
-    async checkForNewItems(libraryId, lookbackDays = 7) {
+    async checkForNewItems(libraryId, lookbackDays = null) {
         try {
             const allSeries = await this.getSeriesByLibrary(libraryId);
             if (!allSeries || !Array.isArray(allSeries)) {
                 return [];
             }
             
+            const lookbackHours = parseInt(process.env.KAVITA_LOOKBACK_HOURS, 10) || 168; // Default to 168 hours (7 days)
+            const effectiveLookbackDays = lookbackDays || (lookbackHours / 24);
+            
             const now = new Date();
-            const cutoffDate = new Date(now.setDate(now.getDate() - lookbackDays));
+            const cutoffDate = new Date(now.setDate(now.getDate() - effectiveLookbackDays));
             
             const recentItems = allSeries.filter(series => {
                 const createdDate = new Date(series.created);
@@ -194,7 +197,7 @@ class KavitaAPI {
             let newItems = [];
             
             for (const library of libraries) {
-                const items = await this.checkForNewItems(library.id, 7) || [];
+                const items = await this.checkForNewItems(library.id, null) || [];
                 
                 const itemsArray = Array.isArray(items) ? items : [];
                 
