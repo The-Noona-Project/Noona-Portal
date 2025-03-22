@@ -88,7 +88,7 @@ export async function setupDiscord() {
                 }
             });
 
-            await client.login(process.env.DISCORD_BOT_TOKEN);
+            await client.login(process.env.DISCORD_TOKEN);
         } catch (err) {
             reject(err);
         }

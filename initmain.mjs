@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import chalk from 'chalk';
 import { printBootSummary } from './noona/utils/printBootSummary.mjs';
 import { getVaultToken } from './noona/vault/vault.mjs';
-import { setupDiscord} from './discord/discord.mjs';
+import { setupDiscord } from './discord/discord.mjs';
 import { setupLibraryNotifications } from './discord/tasks/libraryNotifications.mjs';
 import { authenticateWithKavita } from './kavita/kavita.mjs';
 
@@ -76,8 +76,9 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
     // 2. Discord Bot
     logSection('Discord Bot');
     try {
-        discordClient = await setupDiscord();
-        const commandCount = getCommandCount();
+        const result = await setupDiscord();
+        discordClient = result.client;
+        const commandCount = result.commandCount;
         summary.push({
             name: 'Discord Bot',
             info: `Client logged in, ${commandCount} commands`,

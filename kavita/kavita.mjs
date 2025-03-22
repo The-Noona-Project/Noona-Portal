@@ -2,6 +2,7 @@
 
 import axios from 'axios';
 import dotenv from 'dotenv';
+import { EmbedBuilder } from 'discord.js';
 dotenv.config();
 
 class KavitaAPI {
@@ -153,8 +154,103 @@ class KavitaAPI {
     }
 
     async checkForNewItems(libraryId, lookbackDays = 7) {
-        const recentItems = await this.getRecentlyAdded(libraryId, lookbackDays);
-        return recentItems || [];
+        try {
+            const allSeries = await this.getSeriesByLibrary(libraryId);
+            if (!allSeries || !Array.isArray(allSeries)) {
+                return [];
+            }
+            
+            const now = new Date();
+            const cutoffDate = new Date(now.setDate(now.getDate() - lookbackDays));
+            
+            const recentItems = allSeries.filter(series => {
+                const createdDate = new Date(series.created);
+                return createdDate >= cutoffDate;
+            });
+            
+            return recentItems;
+        } catch (error) {
+            return [];
+        }
+    }
+
+    async sendNewItemNotifications(discordClient, notifiedIds) {
+        try {            
+            const channelId = process.env.NOTIFICATION_CHANNEL_ID;
+            if (!channelId) {
+                console.error('No notification channel ID configured');
+                return [];
+            }
+            
+            const channel = await discordClient.channels.fetch(channelId);
+            if (!channel) {
+                console.error(`Could not find channel with ID ${channelId}`);
+                return [];
+            }
+            
+            const libraries = await this.getLibraries();
+            if (!libraries?.length) return [];
+            
+            let newItems = [];
+            
+            for (const library of libraries) {
+                const items = await this.checkForNewItems(library.id, 7) || [];
+                
+                const itemsArray = Array.isArray(items) ? items : [];
+                
+                const newSeriesItems = itemsArray.filter(item => {
+                    const isNew = !notifiedIds.has(item.id);
+                    return isNew;
+                });
+                
+                
+                if (newSeriesItems.length > 0) {
+                    newSeriesItems.forEach(item => {
+                        newItems.push({
+                            ...item,
+                            libraryName: library.name
+                        });
+                    });
+                }
+            }
+            
+            if (newItems.length === 0) {
+                return [];
+            }
+            
+            newItems.sort((a, b) => new Date(b.created) - new Date(a.created));
+            
+            const batches = [];
+            for (let i = 0; i < newItems.length; i += 10) {
+                batches.push(newItems.slice(i, i + 10));
+            }
+                        
+            for (let i = 0; i < batches.length; i++) {
+                const batch = batches[i];
+                const embed = new EmbedBuilder()
+                    .setColor('#0099ff')
+                    .setTitle(`📚 New Series Added (${i+1}/${batches.length})`)
+                    .setDescription(`${newItems.length} new series have been added to the library!`)
+                    .setTimestamp();
+                
+                batch.forEach(item => {
+                    embed.addFields({
+                        name: item.name,
+                        value: `**Library:** ${item.libraryName}\n**Added:** ${new Date(item.created).toLocaleDateString()}`,
+                        inline: false
+                    });
+                    
+                    notifiedIds.add(item.id);
+                });
+                
+                await channel.send({ embeds: [embed] });
+            }
+            
+            return newItems;
+        } catch (error) {
+            console.error('Error sending notifications:', error);
+            return [];
+        }
     }
 }
 
@@ -162,3 +258,4 @@ const instance = new KavitaAPI();
 export default instance;
 export const authenticateWithKavita = () => instance.authenticate();
 export const checkForNewItems = (...args) => instance.checkForNewItems(...args);
+export const sendNewItemNotifications = (...args) => instance.sendNewItemNotifications(...args);

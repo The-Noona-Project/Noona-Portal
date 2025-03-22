@@ -1,6 +1,6 @@
 // ✅ /discord/tasks/libraryNotifications.mjs
 
-import {checkForNewItems} from '../../kavita/kavita.mjs';
+import {sendNewItemNotifications} from '../../kavita/kavita.mjs';
 import * as vault from '../../noona/vault/vault.mjs';
 import chalk from 'chalk';
 import dotenv from 'dotenv';
@@ -41,8 +41,21 @@ export function setupLibraryNotifications(discordClient) {
     const intervalMs = 1000 * 60 * 60 * intervalHours;
 
     interval = setInterval(async () => {
-        await checkForNewItems(discordClient, notifiedIds);
+        const newItems = await sendNewItemNotifications(discordClient, notifiedIds);
+        
+        if (newItems.length > 0) {
+            try {
+                await vault.saveNotifiedIds(Array.from(notifiedIds));
+                console.log(chalk.green(`✅ Saved ${notifiedIds.size} notified IDs to Vault`));
+            } catch (err) {
+                console.error(chalk.red('❌ Failed to save notification IDs to Vault:'), err?.response?.data || err.message);
+            }
+        }
     }, intervalMs);
+
+    setTimeout(async () => {
+        await sendNewItemNotifications(discordClient, notifiedIds);
+    }, 10000);
 
     console.log(chalk.green(`✅ Library notification service initialized - checking every ${intervalHours} hour(s)`));
 }
