@@ -1,91 +1,71 @@
-import {fileURLToPath} from 'url';
-import {dirname, join} from 'path';
+// ✅ /discord/commandManager.mjs
+
+import { REST, Routes, Collection } from 'discord.js';
 import fs from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const commands = new Map();
-
-/**
- * Registers a command and stores it in the internal commands map.
- *
- * @param {string} name - The name of the command to register.
- * @param {Object} commandObject - The command object containing the execution logic.
- * @example
- * registerCommand('ping', {
- *   execute: async (interaction) => {
- *     await interaction.reply('Pong!');
- *   }
- * });
- */
-export function registerCommand(name, commandObject) {
-    console.log(`Registering command: ${name}`);
-    commands.set(name, commandObject);
-}
+dotenv.config();
 
 /**
- * Loads command files from the "commands" directory and registers them.
- *
- * @returns {Promise<Map<string, Object>>} - A promise that resolves with the map of loaded commands.
- * @example
- * const commands = await loadCommands();
- * console.log(`Loaded ${commands.size} commands.`);
+ * Loads all slash commands from the /commands directory.
+ * @returns {Promise<{ commandJSON: Array, commandCollection: Collection }>}
  */
 export async function loadCommands() {
-    console.log('Loading commands...');
-    const commandsDir = join(__dirname, 'commands');
-    const commandFiles = fs.readdirSync(commandsDir).filter(file => file.endsWith('.mjs'));
+    const commandJSON = [];
+    const commandCollection = new Collection();
 
-    if (commandFiles.length === 0) {
-        console.warn('No command files found.');
-        return commands;
+    const commandsPath = path.join(process.cwd(), 'discord', 'commands');
+    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.mjs'));
+
+    for (const file of commandFiles) {
+        try {
+            const commandModule = await import(`./commands/${file}`);
+            const command = commandModule.command;
+
+            if (!command || !command.data || !command.execute) {
+                console.warn(`⚠️ Invalid command format in file: ${file}`);
+                continue;
+            }
+
+            commandJSON.push(command.data.toJSON());
+            commandCollection.set(command.data.name, command);
+        } catch (err) {
+            console.error(`❌ Failed to load command "${file}":`, err.message);
+        }
     }
 
-    await Promise.all(
-        commandFiles.map(async (file) => {
-            try {
-                const module = await import(`file://${join(commandsDir, file)}`);
-                if (module.command && module.command.data && typeof module.command.data.toJSON === 'function') {
-                    commands.set(module.command.data.name, module.command);
-                } else {
-                    console.warn(`Skipping ${file} - Invalid command structure.`);
-                }
-            } catch (error) {
-                console.error(`Failed to load command ${file}:`, error);
-            }
-        })
-    );
+    // Store in global context for other modules (optional)
+    global.__commandCollection = commandCollection;
 
-    console.log(`Loaded ${commands.size} commands.`);
-    return commands;
+    return { commandJSON, commandCollection };
 }
 
 /**
- * Handles the execution of a received command interaction.
- *
- * @param {import('discord.js').Interaction} interaction - The interaction object representing the command execution.
- * @returns {Promise<void>}
- * @example
- * client.on('interactionCreate', async interaction => {
- *   if (interaction.isCommand()) {
- *     await handleCommand(interaction);
- *   }
- * });
+ * Registers slash commands with the Discord API.
+ * @param {Array} commandJSON - Array of slash command JSON payloads.
+ * @returns {Promise<number>} Number of commands registered
  */
-export async function handleCommand(interaction) {
-    console.log(`Command received: /${interaction.commandName} by ${interaction.user.tag}`);
-
-    const command = commands.get(interaction.commandName);
-    if (!command) {
-        console.warn(`Unknown command: /${interaction.commandName}`);
-        return interaction.reply('Command not found.');
-    }
+export async function registerCommands(commandJSON) {
+    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
 
     try {
-        await command(interaction);
-    } catch (error) {
-        console.error(`Error executing /${interaction.commandName}:`, error);
-        interaction.reply('There was an error executing this command.');
+        const data = await rest.put(
+            Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
+            { body: commandJSON }
+        );
+        console.log(`✅ Registered ${data.length} slash commands!`);
+        return data.length;
+    } catch (err) {
+        console.error('❌ Failed to register slash commands:', err.message);
+        return 0;
     }
+}
+
+/**
+ * Returns the number of loaded commands.
+ * @returns {number}
+ */
+export function getCommandCount() {
+    return global.__commandCollection?.size || 0;
 }

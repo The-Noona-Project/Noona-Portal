@@ -1,17 +1,10 @@
-import {SlashCommandBuilder, EmbedBuilder} from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import kavita from '../../kavita/kavita.mjs';
 
 /**
- * Command for searching manga/comics in Kavita.
- *
- * @type {Object}
- * @property {SlashCommandBuilder} data - The data describing the slash command.
- * @property {Function} execute - The function executed when the command is called.
- * @example
- * // Using the command in Discord
- * /search title:One Piece
+ * Slash command for searching manga/comics in Kavita.
  */
-export const command = {
+const command = {
     data: new SlashCommandBuilder()
         .setName('search')
         .setDescription('Search for manga/comics in Kavita')
@@ -22,35 +15,43 @@ export const command = {
         ),
 
     /**
-     * Executes the "search" command.
-     *
-     * @param {import('discord.js').CommandInteraction} interaction - The interaction object from Discord.
-     * @returns {Promise<void>} A promise that resolves when the interaction is processed.
-     * @example
-     * // Interaction example
-     * await command.execute(interaction);
+     * Executes the search command.
+     * @param {import('discord.js').ChatInputCommandInteraction} interaction
      */
     async execute(interaction) {
         await interaction.deferReply();
         const searchTerm = interaction.options.getString('title');
+        console.log(`🔍 Searching Kavita for: ${searchTerm}`);
 
-        const results = await kavita.searchSeries(searchTerm);
+        try {
+            const results = await kavita.searchSeries(searchTerm);
 
-        if (!results || !results.series || results.series.length === 0) {
-            return interaction.editReply(`No results found for "${searchTerm}".`);
-        }
+            if (!results?.series?.length) {
+                return interaction.editReply(`❌ No results found for **${searchTerm}**.`);
+            }
 
-        const embed = new EmbedBuilder()
-            .setTitle(`Search Results for "${searchTerm}"`)
-            .setColor(0x0099FF);
+            const embed = new EmbedBuilder()
+                .setTitle(`🔍 Results for "${searchTerm}"`)
+                .setColor(0x0099FF)
+                .setDescription(`Showing top ${Math.min(10, results.series.length)} result(s):`);
 
-        results.series.slice(0, 10).forEach((series, index) => {
-            embed.addFields({
-                name: `${index + 1}. ${series.name || 'Unknown'} (ID: ${series.seriesId})`,
-                value: `Library: ${series.libraryName || 'Unknown'}`
+            results.series.slice(0, 10).forEach((series, index) => {
+                const title = series.name || 'Unknown Title';
+                const id = series.seriesId ?? '???';
+                const library = series.libraryName || 'Unknown Library';
+
+                embed.addFields({
+                    name: `${index + 1}. ${title} (ID: ${id})`,
+                    value: `Library: ${library}`
+                });
             });
-        });
 
-        await interaction.editReply({embeds: [embed]});
+            await interaction.editReply({ embeds: [embed] });
+        } catch (err) {
+            console.error(`❌ Error during search:`, err);
+            await interaction.editReply('❌ An error occurred while searching. Please try again later.');
+        }
     }
-}; 
+};
+
+export default command;

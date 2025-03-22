@@ -1,87 +1,148 @@
-// ✅ /initmain.mjs — Boot logic for Noona-Portal
+// ✅ /initmain.mjs — Noona-Portal Boot Logic (Vault-Style Themed)
 
 import dotenv from 'dotenv';
 import chalk from 'chalk';
-import Table from 'cli-table3';
-
-import { authenticateWithKavita } from './kavita/kavita.mjs';
-import { setupDiscord } from './discord/discord.mjs';
+import { printBootSummary } from './noona/utils/printBootSummary.mjs';
+import { getVaultToken } from './noona/vault/vault.mjs';
+import { setupDiscord} from './discord/discord.mjs';
 import { setupLibraryNotifications } from './discord/tasks/libraryNotifications.mjs';
-import { getVaultToken } from './noona/vault.mjs';
+import { authenticateWithKavita } from './kavita/kavita.mjs';
 
 dotenv.config();
-
-console.log('');
-console.log(chalk.bold.cyan('[Noona-Portal] 🚀 Booting up...'));
-console.log('');
 
 let vaultToken = null;
 let discordClient = null;
 let kavitaStatus = false;
+let shutdownInProgress = false;
 
-(async () => {
-    // Step 1: Get Vault token
-    process.stdout.write(chalk.gray('🔐 Requesting Vault token... '));
-    try {
-        vaultToken = await getVaultToken();
-        console.log(chalk.green('OK'));
-    } catch (err) {
-        console.log(chalk.red('FAIL'));
-        console.error(chalk.red('[Vault Auth] ❌ Failed to fetch JWT token from Vault:'), err.message);
-    }
+function logDivider() {
+    console.log(chalk.gray('────────────────────────────────────────'));
+}
 
-    // Step 2: Initialize Discord client
-    try {
-        console.log(chalk.gray('🤖 Starting Discord client...'));
-        discordClient = await setupDiscord();
-    } catch (err) {
-        console.log(chalk.red('FAIL'));
-        console.error(chalk.red('❌ Discord bot failed to initialize:'), err.message);
-    }
+function logSection(title) {
+    console.log(chalk.cyan(`[Init] Starting ${title}...`));
+    logDivider();
+}
 
-    // Step 3: Start Library Notification system
+async function gracefulShutdown(signal) {
+    if (shutdownInProgress) return;
+    shutdownInProgress = true;
+
+    console.log('');
+    console.log(chalk.yellow(`⚠️  Received ${signal}. Shutting down Noona-Portal...`));
+    logDivider();
+
     try {
         if (discordClient) {
-            setupLibraryNotifications(discordClient);
+            console.log(chalk.gray('[Shutdown] Destroying Discord client...'));
+            await discordClient.destroy();
+            console.log(chalk.green('[Shutdown] ✅ Discord client shut down.'));
+        }
+
+        console.log(chalk.green('[Shutdown] 🧼 Cleanup complete.'));
+        logDivider();
+        console.log(chalk.gray('[Shutdown] Noona-Portal exited gracefully.'));
+    } catch (err) {
+        console.error(chalk.red('[Shutdown] ❌ Error during shutdown:'), err.message);
+    } finally {
+        process.exit(0);
+    }
+}
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
+(async () => {
+    console.log('');
+    console.log(chalk.bold.cyan('[Noona-Portal] 🚀 Booting up...'));
+    logDivider();
+
+    const summary = [];
+
+    // 1. Vault Auth
+    logSection('Vault Auth');
+    try {
+        vaultToken = await getVaultToken();
+        if (vaultToken) {
+            console.log(chalk.green('✅ Vault token received successfully.'));
+            summary.push({ name: 'Vault Auth', info: 'Token received successfully', ready: true });
         } else {
-            console.log(chalk.yellow('⚠️  Discord client is not ready. Notifications skipped.'));
+            throw new Error('Token is null');
         }
     } catch (err) {
-        console.error(chalk.red('❌ Notification system failed to initialize:'), err.message);
+        summary.push({ name: 'Vault Auth', info: err.message, ready: false });
     }
 
-    // Step 4: Authenticate with Kavita
+    // 2. Discord Bot
+    logSection('Discord Bot');
     try {
-        console.log(chalk.gray('🔄 Authenticating with Kavita API...'));
-        await authenticateWithKavita();
-        kavitaStatus = true;
+        discordClient = await setupDiscord();
+        const commandCount = getCommandCount();
+        summary.push({
+            name: 'Discord Bot',
+            info: `Client logged in, ${commandCount} commands`,
+            ready: true
+        });
+    } catch (err) {
+        console.error(chalk.red('❌ Discord bot failed to initialize:'), err.message);
+        summary.push({
+            name: 'Discord Bot',
+            info: err.message,
+            ready: false
+        });
+    }
+
+    // 3. Notification System
+    logSection('Library Notification System');
+    try {
+        if (discordClient) {
+            await setupLibraryNotifications(discordClient);
+            summary.push({
+                name: 'Library Notifier',
+                info: 'Initialized (2hr interval)',
+                ready: true
+            });
+        } else {
+            console.log(chalk.yellow('⚠️  Discord client not ready. Notifications skipped.'));
+            summary.push({
+                name: 'Library Notifier',
+                info: 'Skipped (no Discord client)',
+                ready: false
+            });
+        }
+    } catch (err) {
+        console.error(chalk.red('❌ Notification system failed:'), err.message);
+        summary.push({
+            name: 'Library Notifier',
+            info: err.message,
+            ready: false
+        });
+    }
+
+    // 4. Kavita API
+    logSection('Kavita API');
+    try {
+        const success = await authenticateWithKavita();
+        if (success) {
+            console.log(chalk.green('✅ Successfully authenticated with Kavita API.'));
+            kavitaStatus = true;
+            summary.push({
+                name: 'Kavita API',
+                info: 'Authenticated successfully',
+                ready: true
+            });
+        } else {
+            throw new Error('Auth failed');
+        }
     } catch (err) {
         console.error(chalk.red('❌ Kavita authentication failed:'), err.message);
+        summary.push({
+            name: 'Kavita API',
+            info: err.message,
+            ready: false
+        });
     }
 
-    // Boot Summary
-    console.log('');
-    console.log(chalk.bold.cyan('[Noona-Portal] 🧩 Boot Summary\n'));
-
-    const bootTable = new Table({
-        head: ['Component', 'Info', 'Status'],
-        colWidths: [18, 42, 14],
-    });
-
-    bootTable.push(
-        ['Vault Auth', vaultToken ? 'Token received successfully' : 'Token is null', vaultToken ? '🟢 Ready' : '🔴 Failed'],
-        ['Discord Bot', discordClient ? 'Client logged in and ready' : 'Initialization failed', discordClient ? '🟢 Ready' : '🔴 Failed'],
-        ['Kavita API', kavitaStatus ? 'Authenticated successfully' : 'Auth failed', kavitaStatus ? '🟢 Ready' : '🔴 Failed']
-    );
-
-    console.log(bootTable.toString());
-    console.log('');
-
-    if (!vaultToken || !discordClient || !kavitaStatus) {
-        console.log(chalk.yellow('⚠️  One or more components failed to start.'));
-    } else {
-        console.log(chalk.bold.green('🧠  Noona-Portal is online. All systems go.'));
-    }
-
-    console.log('');
+    // Final Boot Summary
+    printBootSummary(summary);
 })();

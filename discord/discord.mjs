@@ -1,129 +1,96 @@
 // ✅ /discord/discord.mjs
 
-import {
-    Client,
-    GatewayIntentBits,
-    Events,
-    REST,
-    Routes,
-    EmbedBuilder,
-    ActionRowBuilder,
-    ButtonBuilder,
-    ButtonStyle
-} from 'discord.js';
-import dotenv from 'dotenv';
-import { loadCommands } from './commandManager.mjs';
-import { setupLibraryNotifications } from './tasks/libraryNotifications.mjs';
+import { Client, GatewayIntentBits, Events } from 'discord.js';
+import { loadCommands, registerCommands, getCommandCount } from './commandManager.mjs';
 import { hasRequiredRole } from './roleManager.mjs';
-import { handleScanButton, handleLibrarySelection, handleSeriesPage } from './commands/scan.mjs';
 
-dotenv.config();
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildMembers,
+    ],
+});
 
 /**
- * Initializes and sets up the Discord bot.
- * Returns the Discord client once ready.
+ * Initializes the Discord bot.
+ * @returns {Promise<{ client: import('discord.js').Client, commandCount: number }>}
  */
 export async function setupDiscord() {
-    console.log('🔄 Setting up Discord bot...');
+    return new Promise(async (resolve, reject) => {
+        try {
+            const { commandJSON, commandCollection } = await loadCommands();
 
-    const client = new Client({
-        intents: [GatewayIntentBits.Guilds]
-    });
-
-    try {
-        // Load commands from the "commands" directory
-        const commands = await loadCommands();
-        console.log('Commands loaded:', Array.from(commands.keys()));
-
-        const commandArray = Array.from(commands.values())
-            .filter(cmd => cmd.data && typeof cmd.data.toJSON === 'function')
-            .map(cmd => cmd.data.toJSON());
-
-        console.log(`Registering ${commandArray.length} commands with Discord API...`);
-
-        // Store commands in client for interaction handling
-        client.commands = commands;
-
-        client.once(Events.ClientReady, async () => {
-            console.log(`✅ Bot logged in as ${client.user.tag}!`);
-
-            try {
-                const rest = new REST().setToken(process.env.DISCORD_TOKEN);
-                await rest.put(
-                    Routes.applicationCommands(client.user.id),
-                    { body: commandArray }
-                );
-                console.log(`✅ Registered ${commandArray.length} slash commands!`);
-            } catch (error) {
-                console.error('❌ Error during slash command registration:', error);
+            if (commandCollection.size === 0) {
+                return reject(new Error('No valid commands loaded.'));
             }
-        });
 
-        // Interaction handlers
-        client.on(Events.InteractionCreate, async interaction => {
-            if (interaction.isCommand()) {
-                const command = client.commands.get(interaction.commandName);
-                if (!command) {
-                    console.error(`No command matching ${interaction.commandName} was found.`);
-                    return;
-                }
+            client.commands = commandCollection;
 
-                if (!hasRequiredRole(interaction)) return;
+            client.once(Events.ClientReady, async () => {
+                console.log(`✅ Bot logged in as ${client.user.tag}!`);
+                const count = await registerCommands(commandJSON);
+                resolve({ client, commandCount: count });
+            });
 
-                try {
-                    await command.execute(interaction);
-                } catch (error) {
-                    console.error(`Error executing ${interaction.commandName}:`, error);
-                    await interaction.reply({
-                        content: '⚠️ An error occurred while executing this command!',
-                        ephemeral: true
-                    });
-                }
-            } else if (interaction.isAutocomplete()) {
-                const command = client.commands.get(interaction.commandName);
-                if (command?.autocomplete) {
+            client.on(Events.InteractionCreate, async interaction => {
+                if (interaction.isChatInputCommand()) {
+                    const command = client.commands.get(interaction.commandName);
+                    if (!command) return;
+
+                    if (!hasRequiredRole(interaction)) return;
+
                     try {
-                        await command.autocomplete(interaction);
-                    } catch (error) {
-                        console.error(`Error handling autocomplete for ${interaction.commandName}:`, error);
+                        await command.execute(interaction);
+                    } catch (err) {
+                        console.error(`❌ Error executing /${interaction.commandName}:`, err);
+                        if (!interaction.replied && !interaction.deferred) {
+                            await interaction.reply({
+                                content: '❌ An error occurred while executing the command.',
+                                ephemeral: true,
+                            });
+                        } else {
+                            await interaction.editReply({
+                                content: '❌ An error occurred while executing the command.',
+                            });
+                        }
+                    }
+                } else if (interaction.isAutocomplete()) {
+                    const command = client.commands.get(interaction.commandName);
+                    if (command?.autocomplete) {
+                        try {
+                            await command.autocomplete(interaction);
+                        } catch (err) {
+                            console.error(`❌ Autocomplete failed for /${interaction.commandName}:`, err);
+                        }
+                    }
+                } else if (interaction.isButton()) {
+                    const [prefix, ...args] = interaction.customId.split('_');
+                    try {
+                        const scan = client.commands.get('scan');
+                        if (!scan) return;
+
+                        if (prefix === 'scan') {
+                            await scan.execute(interaction); // Return to library selection
+                        } else if (prefix === 'series' && args[0] === 'page') {
+                            const [, libraryId, page] = args;
+                            await scan.handleSeriesPage(interaction, libraryId, parseInt(page), false);
+                        } else if (prefix === 'scan') {
+                            const libraryId = args[0];
+                            await scan.handleLibrarySelection(interaction, libraryId);
+                        } else if (prefix === 'series') {
+                            const seriesId = args[0];
+                            await scan.handleSeriesSelection(interaction, seriesId);
+                        }
+                    } catch (err) {
+                        console.error(`❌ Button interaction failed:`, err);
                     }
                 }
-            } else if (interaction.isButton()) {
-                const { customId } = interaction;
+            });
 
-                if (customId === 'scan') {
-                    await handleScanButton(interaction);
-                } else if (customId.startsWith('scan_')) {
-                    await handleLibrarySelection(interaction, customId.split('_')[1]);
-                } else if (customId.startsWith('series_page_')) {
-                    const [_, __, libraryId, pageNumber] = customId.split('_');
-                    await handleSeriesPage(interaction, libraryId, parseInt(pageNumber));
-                } else if (customId.startsWith('series_')) {
-                    const seriesId = customId.split('_')[1];
-                    await handleSeriesSelection(interaction, seriesId);
-                } else if (
-                    customId.startsWith('library_next_') ||
-                    customId.startsWith('library_prev_')
-                ) {
-                    if (client.libraryNotifications) {
-                        await client.libraryNotifications.handlePaginationButton(interaction);
-                    } else {
-                        await interaction.reply({
-                            content: '⚠️ Library notification service not available.',
-                            ephemeral: true
-                        });
-                    }
-                }
-            }
-        });
-
-        // Finally, log in
-        await client.login(process.env.DISCORD_TOKEN);
-
-        return client;
-    } catch (error) {
-        console.error('❌ Discord bot failed to initialize:', error);
-        console.log('FAIL');
-        return null;
-    }
+            await client.login(process.env.DISCORD_BOT_TOKEN);
+        } catch (err) {
+            reject(err);
+        }
+    });
 }
