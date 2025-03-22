@@ -2,6 +2,7 @@
 
 import axios from 'axios';
 import dotenv from 'dotenv';
+import chalk from 'chalk';
 dotenv.config();
 
 const VAULT_URL = process.env.VAULT_URL || 'http://localhost:3120';
@@ -16,11 +17,23 @@ export async function getVaultToken(service = 'noona-portal') {
     if (cachedToken) return cachedToken;
 
     try {
+        console.log(`Attempting to connect to Vault at: ${VAULT_URL}/v1/system/getToken/${service}`);
         const res = await axios.get(`${VAULT_URL}/v1/system/getToken/${service}`);
-        cachedToken = res.data?.token || null;
+        
+        if (!res.data?.token) {
+            console.error('[Vault] Received empty token from Vault service');
+            return null;
+        }
+        
+        cachedToken = res.data.token;
         return cachedToken;
     } catch (err) {
-        return null; // Let caller handle logging
+        console.error('[Vault] Connection error:', err.message);
+        if (err.response) {
+            console.error('[Vault] Response status:', err.response.status);
+            console.error('[Vault] Response data:', err.response.data);
+        }
+        return null;
     }
 }
 
@@ -30,14 +43,18 @@ export async function getVaultToken(service = 'noona-portal') {
  * @returns {Promise<string[]>}
  */
 export async function getNotifiedIds() {
-    if (!cachedToken) return [];
+    if (!cachedToken) {
+        console.error(chalk.red('❌ No token available for getNotifiedIds'));
+        return [];
+    }
 
     try {
         const res = await axios.get(`${VAULT_URL}/v1/notifications/kavita`, {
             headers: { Authorization: `Bearer ${cachedToken}` }
         });
         return res.data?.notifiedIds || [];
-    } catch {
+    } catch (err) {
+        console.error(chalk.red('❌ Failed to get notified IDs:'), err?.response?.data || err.message);
         return [];
     }
 }
@@ -48,14 +65,18 @@ export async function getNotifiedIds() {
  * @returns {Promise<boolean>}
  */
 export async function saveNotifiedIds(ids = []) {
-    if (!cachedToken) return false;
+    if (!cachedToken) {
+        console.error(chalk.red('❌ No token available for saveNotifiedIds'));
+        return false;
+    }
 
     try {
         await axios.post(`${VAULT_URL}/v1/notifications/kavita`, { ids }, {
             headers: { Authorization: `Bearer ${cachedToken}` }
         });
         return true;
-    } catch {
+    } catch (err) {
+        console.error(chalk.red('❌ Failed to save notified IDs:'), err?.response?.data || err.message);
         return false;
     }
 }

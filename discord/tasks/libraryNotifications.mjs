@@ -20,7 +20,7 @@ async function loadNotifiedIds() {
     }
 }
 
-export function setupLibraryNotifications(discordClient) {
+export async function setupLibraryNotifications(discordClient) {
     if (!discordClient) {
         console.warn(chalk.yellow('⚠️  Discord client is not ready. Notifications skipped.'));
         return;
@@ -31,11 +31,7 @@ export function setupLibraryNotifications(discordClient) {
         console.log(chalk.yellow('🔁 Existing notification interval cleared.'));
     }
 
-    let notifiedIds = new Set();
-
-    loadNotifiedIds().then((loaded) => {
-        notifiedIds = loaded;
-    });
+    let notifiedIds = await loadNotifiedIds();
 
     const intervalHours = parseInt(process.env.CHECK_INTERVAL_HOURS, 10) || 2;
     const intervalMs = 1000 * 60 * 60 * intervalHours;
@@ -54,7 +50,15 @@ export function setupLibraryNotifications(discordClient) {
     }, intervalMs);
 
     setTimeout(async () => {
-        await sendNewItemNotifications(discordClient, notifiedIds);
+        const newItems = await sendNewItemNotifications(discordClient, notifiedIds);
+        if (newItems.length > 0) {
+            try {
+                await vault.saveNotifiedIds(Array.from(notifiedIds));
+                console.log(chalk.green(`✅ Saved ${notifiedIds.size} notified IDs to Vault after initial check`));
+            } catch (err) {
+                console.error(chalk.red('❌ Failed to save notification IDs to Vault:'), err?.response?.data || err.message);
+            }
+        }
     }, 10000);
 
     console.log(chalk.green(`✅ Library notification service initialized - checking every ${intervalHours} hour(s)`));
