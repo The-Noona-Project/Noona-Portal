@@ -1,0 +1,16 @@
+services:
+  noona-portal:
+    build: .
+    container_name: noona-portal
+    restart: unless-stopped
+    volumes:
+      - ./.env:/noona/portal/.env
+    environment:
+      - NODE_ENV=production
+      - JWT_SECRET=${VAULT_JWT}
+    networks:
+      - noona-network
+
+networks:
+  noona-network:
+    external: true
