@@ -1,9 +1,10 @@
-// ✅ /initmain.mjs — Noona-Portal Boot Logic (Warden-Aware, Redis-Based Vault Auth)
+// ✅ /initmain.mjs — Noona-Portal Boot Logic (Warden-Aware, Vault-Resilient)
 
 import { setupDiscord } from './discord/discord.mjs';
 import { setupLibraryNotifications } from './discord/tasks/libraryNotifications.mjs';
 import { authenticateWithKavita } from './kavita/kavita.mjs';
-import { getVaultToken } from './noona/vault/vault.mjs';
+import { getVaultToken, waitForVaultReady } from './noona/vault/vault.mjs';
+import { verifyKeys } from './noona/vault/auth.mjs';
 import { printBootSummary } from './noona/logger/printBootSummary.mjs';
 import {
     printHeader,
@@ -15,8 +16,11 @@ import {
 } from './noona/logger/logUtils.mjs';
 import { validateEnv } from './noona/logger/validateEnv.mjs';
 
+const SKIP_KEY_CHECK = process.env.SKIP_KEY_CHECK === 'true';
+const VAULT_URL = process.env.VAULT_URL || 'http://localhost:3120';
+
 // ─────────────────────────────────────────────
-// 🧪 Validate Env First
+// 🌐 Validate Environment Variables
 // ─────────────────────────────────────────────
 validateEnv(
     [
@@ -38,7 +42,7 @@ validateEnv(
 );
 
 // ─────────────────────────────────────────────
-// 🌙 Boot State Vars
+// 🌙 Runtime State
 // ─────────────────────────────────────────────
 let vaultToken = null;
 let discordClient = null;
@@ -83,13 +87,43 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
     const summary = [];
 
-    // 1. 🔐 Vault Token (from Redis)
-    printStep('🔐 Getting Vault token...');
+    // 1. 📡 Vault Availability Check
+    printStep('📡 Checking Vault availability...');
+    let vaultReachable = false;
+    try {
+        vaultReachable = await waitForVaultReady();
+        if (vaultReachable) {
+            printResult('✅ Vault is online.');
+            summary.push({ name: 'Vault Connection', info: 'Responding at /health', ready: true });
+        } else {
+            throw new Error('Timeout or network failure');
+        }
+    } catch (err) {
+        printError(`❌ Vault check failed: ${err.message}`);
+        summary.push({ name: 'Vault Connection', info: err.message, ready: false });
+    }
+
+    // 2. 🔐 JWT Key Pair Check
+    printStep('🔐 Verifying JWT key pair...');
+    try {
+        const keysOk = await verifyKeys();
+        if (keysOk) {
+            summary.push({ name: 'JWT Keys', info: 'Key pair is valid', ready: true });
+        } else {
+            throw new Error('Key pair mismatch or invalid');
+        }
+    } catch (err) {
+        printError(`❌ JWT Key check failed: ${err.message}`);
+        summary.push({ name: 'JWT Keys', info: err.message, ready: false });
+    }
+
+    // 3. 🗝️ Vault Token Fetch (optional in dev)
+    printStep('🔑 Getting Vault token from Redis...');
     try {
         vaultToken = await getVaultToken();
         if (vaultToken) {
-            printResult('✅ Vault token received.');
-            summary.push({ name: 'Vault Auth', info: 'Token retrieved via Redis', ready: true });
+            printResult('✅ Vault token retrieved.');
+            summary.push({ name: 'Vault Auth', info: 'Token loaded from Redis', ready: true });
         } else {
             throw new Error('Token is null');
         }
@@ -98,7 +132,22 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
         summary.push({ name: 'Vault Auth', info: err.message, ready: false });
     }
 
-    // 2. 🤖 Discord Bot
+    // 4. 📚 Kavita API
+    printStep('📚 Authenticating with Kavita...');
+    try {
+        const success = await authenticateWithKavita();
+        if (success) {
+            printResult('✅ Kavita authentication successful.');
+            summary.push({ name: 'Kavita API', info: 'Authenticated successfully', ready: true });
+        } else {
+            throw new Error('Authentication failed');
+        }
+    } catch (err) {
+        printError(`❌ Kavita auth failed: ${err.message}`);
+        summary.push({ name: 'Kavita API', info: err.message, ready: false });
+    }
+
+    // 5. 🤖 Discord Bot
     printStep('🤖 Starting Discord bot...');
     try {
         const result = await setupDiscord();
@@ -113,49 +162,26 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
         summary.push({ name: 'Discord Bot', info: err.message, ready: false });
     }
 
-    // 3. 🔔 Library Notifications
-    printStep('🔔 Setting up notification system...');
+    // 6. 🔔 Library Notifications
+    printStep('🔔 Initializing notification service...');
     try {
         if (discordClient) {
             await setupLibraryNotifications(discordClient);
             const interval = process.env.CHECK_INTERVAL_HOURS || '2';
-            printDebug(`Using CHECK_INTERVAL_HOURS=${interval}`);
+            printDebug(`CHECK_INTERVAL_HOURS=${interval} [NODE_ENV: ${process.env.NODE_ENV}]`);
             summary.push({
                 name: 'Library Notifier',
                 info: `Initialized (interval: ${interval}hr)`,
                 ready: true
             });
         } else {
-            summary.push({
-                name: 'Library Notifier',
-                info: 'Skipped (no Discord client)',
-                ready: false
-            });
+            throw new Error('Skipped (no Discord client)');
         }
     } catch (err) {
-        printError(`❌ Library Notifier failed: ${err.message}`);
+        printError(`❌ Library notifier failed: ${err.message}`);
         summary.push({ name: 'Library Notifier', info: err.message, ready: false });
     }
 
-    // 4. 📚 Kavita Auth
-    printStep('📚 Authenticating with Kavita...');
-    try {
-        const success = await authenticateWithKavita();
-        if (success) {
-            printResult('✅ Authenticated with Kavita.');
-            summary.push({
-                name: 'Kavita API',
-                info: 'Authenticated successfully',
-                ready: true
-            });
-        } else {
-            throw new Error('Authentication failed');
-        }
-    } catch (err) {
-        printError(`❌ Kavita auth failed: ${err.message}`);
-        summary.push({ name: 'Kavita API', info: err.message, ready: false });
-    }
-
-    // ✅ Final Summary Table
+    // ✅ Final Summary
     printBootSummary(summary);
 })();
