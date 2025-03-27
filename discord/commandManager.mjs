@@ -1,24 +1,25 @@
-// ✅ /discord/commandManager.mjs
+// ✅ /discord/commandManager.mjs — Slash Command Loader + Registrar
 
 import { REST, Routes, Collection } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
-import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-
-dotenv.config();
+import { printStep, printResult, printError, printDivider } from '../noona/logger/logUtils.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 /**
  * Loads all slash commands from the /commands directory.
- * @returns {Promise<{ commandJSON: Array, commandCollection: Collection }>}
+ * @returns {Promise<{ commandJSON: Array, commandCollection: Collection, commandNames: string[] }>}
  */
 export async function loadCommands() {
+    printStep('📦 Loading commands...');
+
     const commandJSON = [];
     const commandCollection = new Collection();
+    const commandNames = [];
 
     const commandsPath = path.join(__dirname, 'commands');
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.mjs'));
@@ -29,21 +30,25 @@ export async function loadCommands() {
             const command = commandModule.default;
 
             if (!command || !command.data || !command.execute) {
-                console.warn(`⚠️ Invalid command format in file: ${file}`);
+                printError(`⚠️ Invalid command format in file: ${file}`);
                 continue;
             }
 
             commandJSON.push(command.data.toJSON());
             commandCollection.set(command.data.name, command);
+            commandNames.push(command.data.name);
         } catch (err) {
-            console.error(`❌ Failed to load command "${file}":`, err.message);
+            printError(`❌ Failed to load command "${file}": ${err.message}`);
         }
     }
 
-    // Store in global context for other modules (optional)
     global.__commandCollection = commandCollection;
 
-    return { commandJSON, commandCollection };
+    printResult(`✅ Loaded ${commandCollection.size} commands.`);
+    printResult(`Commands: [ ${commandNames.join(', ')} ]`);
+    printDivider();
+
+    return { commandJSON, commandCollection, commandNames };
 }
 
 /**
@@ -59,10 +64,10 @@ export async function registerCommands(commandJSON) {
             Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
             { body: commandJSON }
         );
-        console.log(`✅ Registered ${data.length} slash commands!`);
+        printResult(`✅ Registered ${data.length} slash commands with Discord.`);
         return data.length;
     } catch (err) {
-        console.error('❌ Failed to register slash commands:', err.message);
+        printError(`❌ Failed to register commands: ${err.message}`);
         return 0;
     }
 }

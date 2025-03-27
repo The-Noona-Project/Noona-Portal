@@ -1,4 +1,4 @@
-// ✅ /noona/utils/printBootSummary.mjs
+// ✅ /noona/logger/printBootSummary.mjs
 
 import chalk from 'chalk';
 import { table } from 'table';
@@ -39,8 +39,8 @@ export function printBootSummary(results) {
             joinJoin: `┼`
         },
         columns: {
-            0: { width: 18 },
-            1: { width: 42 },
+            0: { width: 20 },
+            1: { width: 46 },
             2: { width: 14 }
         }
     };

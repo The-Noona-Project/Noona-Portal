@@ -1,82 +1,166 @@
-// ✅ /noona/vault/vault.mjs — Clean Vault Token Logic (Silent, Cached)
+// ✅ /noona/vault/vault.mjs — Redis-Native Vault Integration for Noona-Portal
 
 import axios from 'axios';
-import dotenv from 'dotenv';
-import chalk from 'chalk';
-dotenv.config();
+import { createClient } from 'redis';
+import {
+    printStep,
+    printDebug,
+    printResult,
+    printError
+} from '../logger/logUtils.mjs';
 
 const VAULT_URL = process.env.VAULT_URL || 'http://localhost:3120';
+const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const SERVICE_NAME = 'noona-portal';
+
 let cachedToken = null;
+let cachedPublicKey = null;
 
 /**
- * Get a Vault token (from cache or from Vault endpoint).
- * @param {string} service - Name of the calling service (default: 'noona-portal')
- * @returns {Promise<string|null>}
+ * 🕒 Utility to wait until Vault HTTP server is up (max 10 seconds).
  */
-export async function getVaultToken(service = 'noona-portal') {
-    if (cachedToken) return cachedToken;
+async function waitForVaultReady(timeoutMs = 10000) {
+    const start = Date.now();
+    printStep(`⏳ Waiting for Vault to become ready at ${VAULT_URL}...`);
+
+    while (Date.now() - start < timeoutMs) {
+        try {
+            await axios.get(`${VAULT_URL}/v1/system/health`);
+            printDebug('Vault is reachable');
+            return true;
+        } catch {
+            await new Promise(res => setTimeout(res, 500));
+        }
+    }
+
+    printError('❌ Vault did not become ready in time');
+    return false;
+}
+
+/**
+ * 🔑 Fetch JWT token for Noona-Portal from Redis directly.
+ */
+export async function getVaultToken() {
+    if (cachedToken) {
+        printDebug('[Vault] Using cached Vault token');
+        return cachedToken;
+    }
+
+    const client = createClient({ url: REDIS_URL });
+    printStep(`🧠 Connecting to Redis at ${REDIS_URL} to fetch token for ${SERVICE_NAME}`);
 
     try {
-        console.log(`Attempting to connect to Vault at: ${VAULT_URL}/v1/system/getToken/${service}`);
-        const res = await axios.get(`${VAULT_URL}/v1/system/getToken/${service}`);
-        
-        if (!res.data?.token) {
-            console.error('[Vault] Received empty token from Vault service');
+        await client.connect();
+        const token = await client.get(`NOONA:TOKEN:${SERVICE_NAME}`);
+
+        if (!token) {
+            printError('[Vault] ❌ Token not found in Redis');
             return null;
         }
-        
-        cachedToken = res.data.token;
-        return cachedToken;
+
+        cachedToken = token;
+        printResult('[Vault] ✅ Vault token loaded from Redis');
+        return token;
     } catch (err) {
-        console.error('[Vault] Connection error:', err.message);
-        if (err.response) {
-            console.error('[Vault] Response status:', err.response.status);
-            console.error('[Vault] Response data:', err.response.data);
-        }
+        printError('[Vault] ❌ Redis token fetch failed:', err.message);
         return null;
+    } finally {
+        await client.disconnect();
+        printDebug('[Vault] Redis client disconnected');
     }
 }
 
 /**
- * Get list of previously notified item IDs.
- * Requires token to have been fetched first.
- * @returns {Promise<string[]>}
+ * 🔓 Get the public JWT key from Redis (set by Warden).
+ */
+export async function getPublicKey() {
+    if (cachedPublicKey) {
+        printDebug('[Vault] Using cached public key');
+        return cachedPublicKey;
+    }
+
+    const client = createClient({ url: REDIS_URL });
+    printStep(`🔐 Connecting to Redis at ${REDIS_URL} to fetch public JWT key`);
+
+    try {
+        await client.connect();
+        const key = await client.get('NOONA:JWT:PUBLIC_KEY');
+
+        if (!key) {
+            printError('[Vault] ❌ Public key not found in Redis');
+            return null;
+        }
+
+        cachedPublicKey = key;
+        printResult('[Vault] ✅ Public key loaded from Redis');
+        return cachedPublicKey;
+    } catch (err) {
+        printError('[Vault] ❌ Redis public key fetch failed:', err.message);
+        return null;
+    } finally {
+        await client.disconnect();
+        printDebug('[Vault] Redis client disconnected');
+    }
+}
+
+/**
+ * 📬 Returns headers for internal Noona-to-Noona auth communication.
+ */
+export async function getAuthHeaders(target = 'noona-vault') {
+    const jwt = await getVaultToken();
+    if (!jwt) {
+        printError('[Vault] ❌ No JWT token available for auth headers');
+        return {};
+    }
+
+    return {
+        Authorization: `Bearer ${jwt}`,
+        fromTo: `${SERVICE_NAME}::${target}`,
+        timestamp: new Date().toISOString(),
+        jwt // legacy field for older consumers
+    };
+}
+
+/**
+ * 📥 Retrieve list of previously notified Kavita item IDs.
  */
 export async function getNotifiedIds() {
-    if (!cachedToken) {
-        console.error(chalk.red('❌ No token available for getNotifiedIds'));
-        return [];
-    }
+    const ready = await waitForVaultReady();
+    if (!ready) return [];
+
+    const headers = await getAuthHeaders();
+    const url = `${VAULT_URL}/v1/notifications/kavita`;
+
+    printStep(`📥 Fetching notified IDs from ${url}`);
 
     try {
-        const res = await axios.get(`${VAULT_URL}/v1/notifications/kavita`, {
-            headers: { Authorization: `Bearer ${cachedToken}` }
-        });
+        const res = await axios.get(url, { headers });
+        printResult(`[Vault] ✅ Retrieved ${res.data?.notifiedIds?.length || 0} notified IDs`);
         return res.data?.notifiedIds || [];
     } catch (err) {
-        console.error(chalk.red('❌ Failed to get notified IDs:'), err?.response?.data || err.message);
+        printError('[Vault] ❌ Failed to get notified IDs:', err?.response?.data || err.message);
         return [];
     }
 }
 
 /**
- * Save updated list of notified item IDs.
- * @param {string[]} ids
- * @returns {Promise<boolean>}
+ * 📤 Save updated list of notified item IDs to Vault.
  */
 export async function saveNotifiedIds(ids = []) {
-    if (!cachedToken) {
-        console.error(chalk.red('❌ No token available for saveNotifiedIds'));
-        return false;
-    }
+    const ready = await waitForVaultReady();
+    if (!ready) return false;
+
+    const headers = await getAuthHeaders();
+    const url = `${VAULT_URL}/v1/notifications/kavita`;
+
+    printStep(`📤 Saving ${ids.length} notified IDs to ${url}`);
 
     try {
-        await axios.post(`${VAULT_URL}/v1/notifications/kavita`, { ids }, {
-            headers: { Authorization: `Bearer ${cachedToken}` }
-        });
+        await axios.post(url, { ids }, { headers });
+        printResult('[Vault] ✅ Notified IDs saved successfully');
         return true;
     } catch (err) {
-        console.error(chalk.red('❌ Failed to save notified IDs:'), err?.response?.data || err.message);
+        printError('[Vault] ❌ Failed to save notified IDs:', err?.response?.data || err.message);
         return false;
     }
 }

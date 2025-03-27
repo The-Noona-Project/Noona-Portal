@@ -1,65 +1,78 @@
-// ✅ /discord/tasks/libraryNotifications.mjs
+// ✅ /discord/tasks/libraryNotifications.mjs — Warden-Aware Notifier (Redis Auth + Logger)
 
-import {sendNewItemNotifications} from '../../kavita/kavita.mjs';
+import { sendNewItemNotifications } from '../../kavita/kavita.mjs';
 import * as vault from '../../noona/vault/vault.mjs';
-import chalk from 'chalk';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import {
+    printStep,
+    printDebug,
+    printResult,
+    printError
+} from '../../noona/logger/logUtils.mjs';
 
 let interval = null;
 
+/**
+ * 📥 Load previously notified item IDs from Vault via Redis-auth.
+ */
 async function loadNotifiedIds() {
+    printStep('📂 Loading previously notified item IDs from Vault...');
+
     try {
         const ids = await vault.getNotifiedIds();
-        console.log(chalk.gray(`📂 Loaded ${ids.length} previously notified items from Vault`));
+        printResult(`📂 Loaded ${ids.length} previously notified items from Vault`);
         return new Set(ids);
     } catch (err) {
-        console.error(chalk.red('❌ Failed to load notification IDs from Vault:'), err?.response?.data || err.message);
+        printError('[Vault] ❌ Failed to load notified IDs:', err?.response?.data || err.message);
         return new Set();
     }
 }
 
+/**
+ * 🛎️ Set up the scheduled library notification service.
+ */
 export async function setupLibraryNotifications(discordClient) {
     if (!discordClient) {
-        console.warn(chalk.yellow('⚠️  Discord client is not ready. Notifications skipped.'));
+        printError('⚠️  Discord client is not ready. Notifications skipped.');
         return;
     }
 
     if (interval) {
         clearInterval(interval);
-        console.log(chalk.yellow('🔁 Existing notification interval cleared.'));
+        printDebug('🔁 Existing notification interval cleared.');
     }
 
-    let notifiedIds = await loadNotifiedIds();
+    const intervalHours = parseInt(process.env.CHECK_INTERVAL_HOURS, 10);
+    if (isNaN(intervalHours) || intervalHours < 1) {
+        printError('❌ Invalid CHECK_INTERVAL_HOURS provided.');
+        return;
+    }
 
-    const intervalHours = parseInt(process.env.CHECK_INTERVAL_HOURS, 10) || 2;
-    const intervalMs = 1000 * 60 * 60 * intervalHours;
+    const intervalMs = intervalHours * 60 * 60 * 1000;
+    const notifiedIds = await loadNotifiedIds();
 
-    interval = setInterval(async () => {
+    /**
+     * 🔄 Check for new items and notify users.
+     */
+    async function runCheck(label = 'manual/initial') {
         const newItems = await sendNewItemNotifications(discordClient, notifiedIds);
-        
+
         if (newItems.length > 0) {
             try {
-                await vault.saveNotifiedIds(Array.from(notifiedIds));
-                console.log(chalk.green(`✅ Saved ${notifiedIds.size} notified IDs to Vault`));
+                await vault.saveNotifiedIds([...notifiedIds]);
+                printResult(`✅ Saved ${notifiedIds.size} notified IDs to Vault after ${label} check.`);
             } catch (err) {
-                console.error(chalk.red('❌ Failed to save notification IDs to Vault:'), err?.response?.data || err.message);
+                printError('[Vault] ❌ Failed to save notified IDs:', err?.response?.data || err.message);
             }
+        } else {
+            printDebug(`📭 No new items found during ${label} check.`);
         }
-    }, intervalMs);
+    }
 
-    setTimeout(async () => {
-        const newItems = await sendNewItemNotifications(discordClient, notifiedIds);
-        if (newItems.length > 0) {
-            try {
-                await vault.saveNotifiedIds(Array.from(notifiedIds));
-                console.log(chalk.green(`✅ Saved ${notifiedIds.size} notified IDs to Vault after initial check`));
-            } catch (err) {
-                console.error(chalk.red('❌ Failed to save notification IDs to Vault:'), err?.response?.data || err.message);
-            }
-        }
-    }, 10000);
+    // Run once shortly after boot
+    setTimeout(() => runCheck('initial'), 10_000);
 
-    console.log(chalk.green(`✅ Library notification service initialized - checking every ${intervalHours} hour(s)`));
+    // Start scheduled loop
+    interval = setInterval(() => runCheck('scheduled'), intervalMs);
+
+    printResult(`✅ Library notification service initialized - checking every ${intervalHours} hour(s)`);
 }

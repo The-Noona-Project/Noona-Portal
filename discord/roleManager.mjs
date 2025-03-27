@@ -1,40 +1,41 @@
-import dotenv from 'dotenv';
+// ✅ /discord/roleManager.mjs — Warden-Style Role Enforcement
 
-dotenv.config();
+import {
+    printError,
+    printResult,
+} from '../noona/logger/logUtils.mjs';
 
 /**
- * List of restricted commands and their required roles.
- * If no role ID is found for admin/mod, it logs a warning and prevents command execution.
+ * Map of restricted commands and the required ENV role key.
  */
 const restrictedCommands = {
-    "admin": "REQUIRED_ROLE_ADMIN",
-    "scan": "REQUIRED_ROLE_MOD",
-    "search": "REQUIRED_ROLE_USER",
-    "join": "REQUIRED_ROLE_USER",
-    "ding": "REQUIRED_ROLE_USER" // Always requires a user role
+    admin: 'REQUIRED_ROLE_ADMIN',
+    scan: 'REQUIRED_ROLE_MOD',
+    search: 'REQUIRED_ROLE_USER',
+    join: 'REQUIRED_ROLE_USER',
+    ding: 'REQUIRED_ROLE_USER'
 };
 
 /**
- * Checks if a user has the required role ID to execute a command.
+ * Checks if the user has the required role to run a command.
+ * Replies with appropriate feedback if blocked.
  *
- * @param {import('discord.js').Interaction} interaction - The Discord interaction.
- * @returns {boolean} - Returns true if authorized, false otherwise.
+ * @param {import('discord.js').ChatInputCommandInteraction} interaction
+ * @returns {boolean}
  */
 export function hasRequiredRole(interaction) {
     const commandName = interaction.commandName;
+    const requiredEnvKey = restrictedCommands[commandName];
 
-    // If command isn't restricted, allow execution
-    if (!restrictedCommands[commandName]) {
-        return true;
-    }
+    // ✅ Unrestricted command — allow execution
+    if (!requiredEnvKey) return true;
 
-    // Get the required role ID and guild ID from environment variables
-    let requiredRoleID = process.env[restrictedCommands[commandName]];
+    const requiredRoleID = process.env[requiredEnvKey];
     const requiredGuildID = process.env.REQUIRED_GUILD_ID;
 
-    // Check if the interaction is from the correct guild
+    // 🔐 Guild lock
     if (requiredGuildID && interaction.guildId !== requiredGuildID) {
-        console.warn(`❌ Command ${commandName} was attempted from a non-authorized guild.`);
+        printError(`Guild check failed for /${commandName} — blocked`);
         interaction.reply({
             content: `❌ This command can only be used in the authorized server.`,
             ephemeral: true
@@ -42,31 +43,22 @@ export function hasRequiredRole(interaction) {
         return false;
     }
 
-    // If Admin or Mod role ID is missing, log warning and block command execution
-    if (!requiredRoleID && (commandName === "admin" || commandName === "ding")) {
-        console.warn(`❌ Missing role ID for ${commandName.toUpperCase()} in .env. Please set ${restrictedCommands[commandName]}!`);
+    // 🧪 Missing role configuration
+    if (!requiredRoleID) {
+        printError(`Missing ENV: ${requiredEnvKey} required for /${commandName}`);
         interaction.reply({
-            content: `❌ This command requires a role that has not been set up. Please contact the administrator.`,
+            content: `❌ This command requires a role that hasn't been configured. Please contact the administrator.`,
             ephemeral: true
         });
         return false;
     }
 
-    // If User role ID is missing, log warning and block user commands
-    if (!requiredRoleID && commandName === "scan") {
-        console.warn(`❌ Missing REQUIRED_ROLE_USER in .env. Please set it to enforce role checks!`);
-        interaction.reply({
-            content: `❌ User role ID is not set. Please contact the administrator.`,
-            ephemeral: true
-        });
-        return false;
-    }
-
-    // Check if the user has the required role ID in the specified guild
+    // 🔍 Look up user in guild & check roles
     const member = interaction.guild.members.cache.get(interaction.user.id);
-    const hasRole = member ? member.roles.cache.has(requiredRoleID) : false;
+    const hasRole = member?.roles.cache.has(requiredRoleID) ?? false;
 
     if (!hasRole) {
+        printResult(`❌ Unauthorized attempt: ${interaction.user.tag} tried /${commandName}`);
         interaction.reply({
             content: `❌ You do not have the required role to use this command.`,
             ephemeral: true
@@ -74,5 +66,6 @@ export function hasRequiredRole(interaction) {
         return false;
     }
 
+    // ✅ Passed all checks
     return true;
 }
