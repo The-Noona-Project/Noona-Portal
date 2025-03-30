@@ -1,4 +1,4 @@
-// ✅ /noona/vault/auth.mjs — JWT Key Validator & Accessor (Noona-Style + Debug Enhancements)
+// /noona/vault/auth.mjs — JWT Key Validator & Accessor (Noona-Style + Debug Enhancements)
 
 import { createClient } from 'redis';
 import jwt from 'jsonwebtoken';
@@ -99,8 +99,9 @@ export async function verifyKeys() {
 
     try {
         const testPayload = { sub: 'noona-test', iat: Math.floor(Date.now() / 1000) };
-        const token = jwt.sign(testPayload, privateKey, { algorithm: 'HS256' });
-        jwt.verify(token, publicKey, { algorithms: ['HS256'] });
+        // Use RS256 for signing and verification
+        const token = jwt.sign(testPayload, privateKey, { algorithm: 'RS256' });
+        jwt.verify(token, publicKey, { algorithms: ['RS256'] });
 
         printResult('[Auth] ✅ Key pair is valid — signing & verification succeeded');
         return true;

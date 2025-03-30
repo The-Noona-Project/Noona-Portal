@@ -1,4 +1,4 @@
-// ✅ /noona/vault/vault.mjs — Vault Integration with Redis Auth via auth.mjs
+// /noona/vault/vault.mjs — Vault Integration with Redis Auth via auth.mjs
 
 import axios from 'axios';
 import { createClient } from 'redis';
@@ -82,17 +82,17 @@ export async function getPublicKey() {
  * 📬 Generate internal service-to-service headers
  */
 export async function getAuthHeaders(target = 'noona-vault') {
-    const jwt = await getVaultToken();
-    if (!jwt) {
+    const jwtToken = await getVaultToken();
+    if (!jwtToken) {
         printError('[Vault] ❌ No JWT token available — cannot create auth headers');
         return {};
     }
 
     const headers = {
-        Authorization: `Bearer ${jwt}`,
+        Authorization: `Bearer ${jwtToken}`,
         fromTo: `${SERVICE_NAME}::${target}`,
         timestamp: new Date().toISOString(),
-        jwt // legacy support
+        jwt: jwtToken // legacy support
     };
 
     printDebug(`[Vault] Generated auth headers for ${SERVICE_NAME} → ${target}`);
