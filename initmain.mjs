@@ -1,10 +1,10 @@
-// ✅ /initmain.mjs — Noona-Portal Boot Logic (Warden-Aware, Vault-Resilient)
+// /initmain.mjs — Noona-Portal Boot Logic (Vault-Resilient, Discord-Aware)
 
-import { setupDiscord } from './discord/discord.mjs';
+import { setupDiscord } from './discord/initDiscord.mjs';
 import { setupLibraryNotifications } from './discord/tasks/libraryNotifications.mjs';
-import { authenticateWithKavita } from './kavita/kavita.mjs';
-import { getVaultToken, waitForVaultReady } from './noona/vault/vault.mjs';
-import { verifyKeys } from './noona/vault/auth.mjs';
+import { authenticateWithKavita } from './kavita/initKavita.mjs';
+import { getVaultToken, waitForVaultReady } from './noona/vault/initVault.mjs';
+import { checkKeys } from './noona/vault/auth/checkKeys.mjs';
 import { printBootSummary } from './noona/logger/printBootSummary.mjs';
 import {
     printHeader,
@@ -12,16 +12,15 @@ import {
     printResult,
     printError,
     printDebug,
-    printDivider
+    printDivider,
+    printSection
 } from './noona/logger/logUtils.mjs';
 import { validateEnv } from './noona/logger/validateEnv.mjs';
 
 const SKIP_KEY_CHECK = process.env.SKIP_KEY_CHECK === 'true';
 const VAULT_URL = process.env.VAULT_URL || 'http://localhost:3120';
 
-// ─────────────────────────────────────────────
-// 🌐 Validate Environment Variables
-// ─────────────────────────────────────────────
+// 🔍 Validate required environment variables
 validateEnv(
     [
         'KAVITA_URL',
@@ -44,7 +43,6 @@ validateEnv(
 // ─────────────────────────────────────────────
 // 🌙 Runtime State
 // ─────────────────────────────────────────────
-let vaultToken = null;
 let discordClient = null;
 let shutdownInProgress = false;
 
@@ -60,17 +58,17 @@ async function gracefulShutdown(signal) {
 
     try {
         if (discordClient) {
-            printStep('Destroying Discord client...');
+            printStep('🧼 Destroying Discord client...');
             await discordClient.destroy();
             printResult('✅ Discord client shut down.');
         }
 
-        printResult('🧼 Cleanup complete.');
-        printDivider();
-        printResult('🌙 Noona-Portal exited gracefully.');
+        printResult('🌙 Cleanup complete.');
     } catch (err) {
         printError(`❌ Error during shutdown: ${err.message}`);
     } finally {
+        printDivider();
+        printResult('👋 Noona-Portal exited gracefully.');
         process.exit(0);
     }
 }
@@ -79,25 +77,22 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 // ─────────────────────────────────────────────
-// 🚀 Main Boot
+// 🚀 Main Boot Sequence
 // ─────────────────────────────────────────────
 (async () => {
     console.log('');
     printHeader('Noona-Portal');
+    printSection('🛠️ Initializing Portal Environment...');
 
     const summary = [];
 
     // 1. 📡 Vault Availability Check
     printStep('📡 Checking Vault availability...');
-    let vaultReachable = false;
     try {
-        vaultReachable = await waitForVaultReady();
-        if (vaultReachable) {
-            printResult('✅ Vault is online.');
-            summary.push({ name: 'Vault Connection', info: 'Responding at /health', ready: true });
-        } else {
-            throw new Error('Timeout or network failure');
-        }
+        const vaultReady = await waitForVaultReady();
+        if (!vaultReady) throw new Error('Timeout or network failure');
+        printResult('✅ Vault is online.');
+        summary.push({ name: 'Vault Connection', info: 'Responding at /health', ready: true });
     } catch (err) {
         printError(`❌ Vault check failed: ${err.message}`);
         summary.push({ name: 'Vault Connection', info: err.message, ready: false });
@@ -106,48 +101,39 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
     // 2. 🔐 JWT Key Pair Check
     printStep('🔐 Verifying JWT key pair...');
     try {
-        const keysOk = await verifyKeys();
-        if (keysOk) {
-            summary.push({ name: 'JWT Keys', info: 'Key pair is valid', ready: true });
-        } else {
-            throw new Error('Key pair mismatch or invalid');
-        }
+        const keysValid = await checkKeys();
+        if (!keysValid) throw new Error('Key pair mismatch or invalid');
+        summary.push({ name: 'JWT Keys', info: 'Key pair is valid', ready: true });
     } catch (err) {
         printError(`❌ JWT Key check failed: ${err.message}`);
         summary.push({ name: 'JWT Keys', info: err.message, ready: false });
     }
 
-    // 3. 🗝️ Vault Token Fetch (optional in dev)
+    // 3. 🗝️ Vault Token Fetch (optional for headers)
     printStep('🔑 Getting Vault token from Redis...');
     try {
-        vaultToken = await getVaultToken();
-        if (vaultToken) {
-            printResult('✅ Vault token retrieved.');
-            summary.push({ name: 'Vault Auth', info: 'Token loaded from Redis', ready: true });
-        } else {
-            throw new Error('Token is null');
-        }
+        const token = await getVaultToken();
+        if (!token) throw new Error('Token is null');
+        printResult('✅ Vault token retrieved.');
+        summary.push({ name: 'Vault Auth', info: 'Token loaded from Redis', ready: true });
     } catch (err) {
         printError(`❌ Vault token failed: ${err.message}`);
         summary.push({ name: 'Vault Auth', info: err.message, ready: false });
     }
 
-    // 4. 📚 Kavita API
+    // 4. 📚 Kavita Authentication
     printStep('📚 Authenticating with Kavita...');
     try {
         const success = await authenticateWithKavita();
-        if (success) {
-            printResult('✅ Kavita authentication successful.');
-            summary.push({ name: 'Kavita API', info: 'Authenticated successfully', ready: true });
-        } else {
-            throw new Error('Authentication failed');
-        }
+        if (!success) throw new Error('Authentication failed');
+        printResult('✅ Kavita authentication successful.');
+        summary.push({ name: 'Kavita API', info: 'Authenticated successfully', ready: true });
     } catch (err) {
         printError(`❌ Kavita auth failed: ${err.message}`);
         summary.push({ name: 'Kavita API', info: err.message, ready: false });
     }
 
-    // 5. 🤖 Discord Bot
+    // 5. 🤖 Discord Bot Startup
     printStep('🤖 Starting Discord bot...');
     try {
         const result = await setupDiscord();
@@ -162,26 +148,23 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
         summary.push({ name: 'Discord Bot', info: err.message, ready: false });
     }
 
-    // 6. 🔔 Library Notifications
+    // 6. 🔔 Notification Scheduler
     printStep('🔔 Initializing notification service...');
     try {
-        if (discordClient) {
-            await setupLibraryNotifications(discordClient);
-            const interval = process.env.CHECK_INTERVAL_HOURS || '2';
-            printDebug(`CHECK_INTERVAL_HOURS=${interval} [NODE_ENV: ${process.env.NODE_ENV}]`);
-            summary.push({
-                name: 'Library Notifier',
-                info: `Initialized (interval: ${interval}hr)`,
-                ready: true
-            });
-        } else {
-            throw new Error('Skipped (no Discord client)');
-        }
+        if (!discordClient) throw new Error('Skipped (no Discord client)');
+        await setupLibraryNotifications(discordClient);
+        const interval = process.env.CHECK_INTERVAL_HOURS || '168';
+        printDebug(`CHECK_INTERVAL_HOURS=${interval} [NODE_ENV: ${process.env.NODE_ENV}]`);
+        summary.push({
+            name: 'Library Notifier',
+            info: `Initialized (interval: ${interval}hr)`,
+            ready: true
+        });
     } catch (err) {
         printError(`❌ Library notifier failed: ${err.message}`);
         summary.push({ name: 'Library Notifier', info: err.message, ready: false });
     }
 
-    // ✅ Final Summary
+    // ✅ Boot Summary Table
     printBootSummary(summary);
 })();

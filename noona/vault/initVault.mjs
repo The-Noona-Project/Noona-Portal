@@ -1,18 +1,12 @@
-// ✅ /noona/vault/vault.mjs — Vault Integration with Redis Auth via auth.mjs
-
 import axios from 'axios';
 import { createClient } from 'redis';
-import {
-    printStep,
-    printDebug,
-    printResult,
-    printError
-} from '../logger/logUtils.mjs';
-import { getPublicKey as fetchPublicKey } from './auth.mjs';
+import { printStep, printDebug, printResult, printError } from '../logger/logUtils.mjs';
+import { getPublicKey as fetchPublicKey } from './auth/getPublicKey.mjs';
+import { postVault } from './auth/postVault.mjs';
 
 const VAULT_URL = process.env.VAULT_URL || 'http://localhost:3120';
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
-const SERVICE_NAME = 'noona-portal';
+const SERVICE_NAME = process.env.SERVICE_NAME || 'noona-portal';
 
 let cachedToken = null;
 
@@ -22,7 +16,6 @@ let cachedToken = null;
 export async function waitForVaultReady(timeoutMs = 10000) {
     const start = Date.now();
     printStep(`⏳ Waiting for Vault to become ready at ${VAULT_URL}...`);
-
     while (Date.now() - start < timeoutMs) {
         try {
             await axios.get(`${VAULT_URL}/v1/system/health`);
@@ -32,13 +25,12 @@ export async function waitForVaultReady(timeoutMs = 10000) {
             await new Promise(res => setTimeout(res, 500));
         }
     }
-
     printError('[Vault] ❌ Vault did not become ready in time');
     return false;
 }
 
 /**
- * 🔑 Fetch Vault-issued token from Redis for Noona-Portal
+ * 🔑 Fetch Vault-issued token from Redis for this service
  */
 export async function getVaultToken() {
     if (cachedToken) {
@@ -47,11 +39,11 @@ export async function getVaultToken() {
     }
 
     const client = createClient({ url: REDIS_URL });
+    const key = `NOONA:TOKEN:${SERVICE_NAME}`;
     printStep(`[Vault] 🧠 Connecting to Redis at ${REDIS_URL} to fetch token for ${SERVICE_NAME}`);
 
     try {
         await client.connect();
-        const key = `NOONA:TOKEN:${SERVICE_NAME}`;
         const token = await client.get(key);
 
         if (!token) {
@@ -63,7 +55,7 @@ export async function getVaultToken() {
         printResult('[Vault] ✅ Vault token loaded from Redis');
         return token;
     } catch (err) {
-        printError('[Vault] ❌ Redis token fetch failed:', err.message);
+        printError(`[Vault] ❌ Redis token fetch failed: ${err.message}`);
         return null;
     } finally {
         await client.disconnect();
@@ -72,7 +64,7 @@ export async function getVaultToken() {
 }
 
 /**
- * 🔓 Expose cached public key (delegates to auth.mjs)
+ * 🔓 Expose cached public key (delegates to auth/getPublicKey.mjs)
  */
 export async function getPublicKey() {
     return await fetchPublicKey();
@@ -82,17 +74,17 @@ export async function getPublicKey() {
  * 📬 Generate internal service-to-service headers
  */
 export async function getAuthHeaders(target = 'noona-vault') {
-    const jwt = await getVaultToken();
-    if (!jwt) {
+    const jwtToken = await getVaultToken();
+    if (!jwtToken) {
         printError('[Vault] ❌ No JWT token available — cannot create auth headers');
         return {};
     }
 
     const headers = {
-        Authorization: `Bearer ${jwt}`,
+        Authorization: `Bearer ${jwtToken}`,
         fromTo: `${SERVICE_NAME}::${target}`,
         timestamp: new Date().toISOString(),
-        jwt // legacy support
+        jwt: jwtToken // legacy support
     };
 
     printDebug(`[Vault] Generated auth headers for ${SERVICE_NAME} → ${target}`);
@@ -104,7 +96,10 @@ export async function getAuthHeaders(target = 'noona-vault') {
  */
 export async function getNotifiedIds() {
     const ready = await waitForVaultReady();
-    if (!ready) return [];
+    if (!ready) {
+        printError('[Vault] Aborting request — Vault unavailable');
+        return [];
+    }
 
     const headers = await getAuthHeaders();
     const url = `${VAULT_URL}/v1/notifications/kavita`;
@@ -117,7 +112,7 @@ export async function getNotifiedIds() {
         printResult(`[Vault] ✅ Retrieved ${ids.length} notified IDs`);
         return ids;
     } catch (err) {
-        printError('[Vault] ❌ Failed to get notified IDs:', err?.response?.data || err.message);
+        printError(`[Vault] ❌ Failed to get notified IDs: ${err?.response?.data?.message || err.message}`);
         return [];
     }
 }
@@ -127,19 +122,19 @@ export async function getNotifiedIds() {
  */
 export async function saveNotifiedIds(ids = []) {
     const ready = await waitForVaultReady();
-    if (!ready) return false;
+    if (!ready) {
+        printError('[Vault] Aborting request — Vault unavailable');
+        return false;
+    }
 
-    const headers = await getAuthHeaders();
-    const url = `${VAULT_URL}/v1/notifications/kavita`;
-
+    const url = '/v1/notifications/kavita';
     printStep(`[Vault] 📤 Saving ${ids.length} notified IDs to ${url}`);
 
     try {
-        await axios.post(url, { ids }, { headers });
-        printResult('[Vault] ✅ Notified IDs saved successfully');
-        return true;
+        const result = await postVault(url, { ids });
+        return !!result?.success;
     } catch (err) {
-        printError('[Vault] ❌ Failed to save notified IDs:', err?.response?.data || err.message);
+        printError(`[Vault] ❌ Failed to save notified IDs: ${err?.response?.data?.message || err.message}`);
         return false;
     }
 }

@@ -1,3 +1,5 @@
+// /discord/commands/ding.mjs — Simple Ping Test
+
 import { SlashCommandBuilder } from 'discord.js';
 
 const command = {

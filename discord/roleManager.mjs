@@ -1,8 +1,8 @@
-// ✅ /discord/roleManager.mjs — Warden-Style Role Enforcement
+// /discord/roleManager.mjs — Warden-Style Role Enforcement
 
 import {
     printError,
-    printResult,
+    printResult
 } from '../noona/logger/logUtils.mjs';
 
 /**
@@ -17,55 +17,49 @@ const restrictedCommands = {
 };
 
 /**
- * Checks if the user has the required role to run a command.
- * Replies with appropriate feedback if blocked.
- *
- * @param {import('discord.js').ChatInputCommandInteraction} interaction
+ * Enforces role-based access control for Discord commands.
+ * @param {import('discord/initDiscord.mjs').ChatInputCommandInteraction} interaction
  * @returns {boolean}
  */
 export function hasRequiredRole(interaction) {
     const commandName = interaction.commandName;
     const requiredEnvKey = restrictedCommands[commandName];
 
-    // ✅ Unrestricted command — allow execution
+    // ✅ Unrestricted command
     if (!requiredEnvKey) return true;
 
     const requiredRoleID = process.env[requiredEnvKey];
     const requiredGuildID = process.env.REQUIRED_GUILD_ID;
 
-    // 🔐 Guild lock
     if (requiredGuildID && interaction.guildId !== requiredGuildID) {
-        printError(`Guild check failed for /${commandName} — blocked`);
+        printError(`[RoleCheck] ❌ Guild mismatch for /${commandName}`);
         interaction.reply({
-            content: `❌ This command can only be used in the authorized server.`,
+            content: '❌ This command can only be used in the official server.',
             ephemeral: true
         });
         return false;
     }
 
-    // 🧪 Missing role configuration
     if (!requiredRoleID) {
-        printError(`Missing ENV: ${requiredEnvKey} required for /${commandName}`);
+        printError(`[RoleCheck] ❌ ENV missing: ${requiredEnvKey}`);
         interaction.reply({
-            content: `❌ This command requires a role that hasn't been configured. Please contact the administrator.`,
+            content: '❌ Role for this command is not configured. Please contact an admin.',
             ephemeral: true
         });
         return false;
     }
 
-    // 🔍 Look up user in guild & check roles
     const member = interaction.guild.members.cache.get(interaction.user.id);
     const hasRole = member?.roles.cache.has(requiredRoleID) ?? false;
 
     if (!hasRole) {
-        printResult(`❌ Unauthorized attempt: ${interaction.user.tag} tried /${commandName}`);
+        printResult(`[RoleCheck] ❌ Unauthorized attempt: ${interaction.user.tag} tried /${commandName}`);
         interaction.reply({
-            content: `❌ You do not have the required role to use this command.`,
+            content: '❌ You do not have permission to use this command.',
             ephemeral: true
         });
         return false;
     }
 
-    // ✅ Passed all checks
     return true;
 }

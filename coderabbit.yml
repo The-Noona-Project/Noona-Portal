@@ -1,0 +1,80 @@
+# coderabbit.yml for Noona-Portal
+name: Noona-Portal
+description: AI-powered commit analysis, PR reviews, and Discord bot logic validation for Noona-Portal — the gateway to The Noona Project.
+language: javascript
+ai_reviewer: true
+lint: true
+test_detection: true
+commit_message_analysis: true
+pull_request_summary: true
+pr_reviewer: true
+pr_commentary: true
+issue_commentary: true
+
+paths:
+  include:
+    - .
+    - discord/
+    - kavita/
+    - vault/
+    - commandManager.mjs
+    - initmain.mjs
+  exclude:
+    - node_modules/
+    - .git/
+    - logs/
+    - .env
+    - dist/
+    - build/
+
+lint_config:
+  eslint: true
+  prettier: true
+  config_file: .eslintrc.json
+
+test_config:
+  detect: true
+  frameworks:
+    - jest
+    - mocha
+    - vitest
+
+comment_style:
+  concise: false
+  emoji: true
+  tone: friendly
+
+rules:
+  max_comments: 15
+  min_code_diff: 3
+  pr_size_limit: 1500
+  require_tests: true
+  block_merge_on_errors: false
+  check_for_env_leaks: true
+  enforce_env_best_practices: true
+
+notifications:
+  on_success: comment
+  on_failure: comment
+
+environments:
+  github:
+    visibility: public
+    features:
+      - code_reviews
+      - pr_summaries
+      - commit_checks
+      - issue_replies
+      - suggestions
+
+ci_integration:
+  enabled: true
+  auto_comment_on_pr: true
+  auto_approve_if_clean: false
+
+pr_checklist:
+  - ✅ Command handlers are properly registered
+  - ✅ Kavita API integration logic is updated/tested
+  - ✅ Vault communication is secure and stable
+  - ✅ No secrets or keys committed (especially in .env)
+  - ✅ Bot responses are user-friendly and contextual

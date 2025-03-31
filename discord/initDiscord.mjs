@@ -1,4 +1,4 @@
-// ✅ /discord/discord.mjs — Warden-Ready Discord Setup (With Intent Notes)
+// /discord/initDiscord.mjs — Warden-Ready Discord Setup (With Intent Notes)
 
 import { Client, GatewayIntentBits, Events } from 'discord.js';
 import { loadCommands, registerCommands } from './commandManager.mjs';
@@ -12,28 +12,25 @@ import {
     printStep,
     printResult,
     printError,
-    printDivider
+    printDebug,
+    printDivider,
+    printSection
 } from '../noona/logger/logUtils.mjs';
 
-// ⚠️ NOTE: Only enable privileged intents below IF enabled in Discord Dev Portal
-// See: https://discord.com/developers/applications > [Your Bot] > Bot > Privileged Gateway Intents
-
 const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        // GatewayIntentBits.GuildMessages,     // 🛑 Requires MESSAGE CONTENT intent (usually not needed)
-        // GatewayIntentBits.GuildMembers       // 🛑 Requires SERVER MEMBERS intent (used for join detection, etc)
-    ]
+    intents: [GatewayIntentBits.Guilds]
 });
 
 /**
- * Initializes the Discord bot and sets up all interaction handlers.
+ * Initializes the Discord bot, loads slash commands, and attaches interaction handlers.
  * @returns {Promise<{ client: Client, commandCount: number }>}
  */
 export async function setupDiscord() {
+    printSection('🤖 Discord Bot Setup');
+
     return new Promise(async (resolve, reject) => {
         try {
-            printStep('🔄 Loading slash commands...');
+            printStep('📦 Loading slash commands...');
             const { commandJSON, commandCollection, commandNames } = await loadCommands();
 
             if (commandCollection.size === 0) {
@@ -56,17 +53,18 @@ export async function setupDiscord() {
 
             client.on(Events.InteractionCreate, async interaction => {
                 try {
-                    // 🔹 Slash Command
+                    // 🧠 Slash Commands
                     if (interaction.isChatInputCommand()) {
                         const command = client.commands.get(interaction.commandName);
                         if (!command) return;
 
                         if (!hasRequiredRole(interaction)) return;
 
+                        printDebug(`🔧 [Discord] ${interaction.user.tag} used /${interaction.commandName}`);
                         await command.execute(interaction);
                     }
 
-                    // 🔹 Autocomplete
+                    // 🔄 Autocomplete Support
                     else if (interaction.isAutocomplete()) {
                         const command = client.commands.get(interaction.commandName);
                         if (command?.autocomplete) {
@@ -74,7 +72,7 @@ export async function setupDiscord() {
                         }
                     }
 
-                    // 🔹 Button Interactions
+                    // 🔘 Button Handlers (for scan UI)
                     else if (interaction.isButton()) {
                         const [prefix, ...args] = interaction.customId.split('_');
                         const scan = client.commands.get('scan');
