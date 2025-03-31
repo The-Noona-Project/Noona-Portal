@@ -30,7 +30,11 @@ class KavitaAPI {
     async fetchData(endpoint, method = 'GET', data = null, queryParams = null) {
         if (!this.jwtToken) {
             printDebug('[Kavita] No token cached — authenticating...');
-            await this.authenticate();
+            const authSuccess = await this.authenticate();
+            if (!authSuccess) {
+                printError('[Kavita] ❌ Failed to authenticate before request');
+                return null;
+            }
         }
 
         let url = `${this.baseUrl}${endpoint}`;
@@ -59,7 +63,11 @@ class KavitaAPI {
         } catch (err) {
             if (err.response?.status === 401) {
                 printDebug('[Kavita] Token expired — reauthenticating...');
-                await this.authenticate();
+                const authSuccess = await this.authenticate();
+                if (!authSuccess) {
+                    printError('[Kavita] ❌ Failed to re-authenticate after token expiration');
+                    return null;
+                }
                 config.headers.Authorization = `Bearer ${this.jwtToken}`;
                 const retry = await axios(config);
                 return retry.data;
