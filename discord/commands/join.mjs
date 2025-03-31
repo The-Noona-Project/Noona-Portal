@@ -1,5 +1,8 @@
+// /discord/commands/join.mjs — Account Creation via Kavita API
+
 import { SlashCommandBuilder } from 'discord.js';
-import kavita from '../../kavita/kavita.mjs';
+import { createUser } from '../../kavita/postKavita.mjs';
+import { printDebug, printError } from '../../noona/logger/logUtils.mjs';
 
 const command = {
     data: new SlashCommandBuilder()
@@ -15,21 +18,21 @@ const command = {
         await interaction.deferReply({ ephemeral: true });
 
         const email = interaction.options.getString('email');
-        console.log(`📡 Creating user in Kavita for email: ${email}`);
+        printDebug(`[Join] Request from ${interaction.user.tag} → Email: ${email}`);
 
         if (!validateEmail(email)) {
             return interaction.editReply('❌ Invalid email address. Please try again with a valid one.');
         }
 
         try {
-            const inviteLink = await kavita.createUser(email);
+            const inviteLink = await createUser(email);
             if (!inviteLink || inviteLink.includes('<html')) {
                 return interaction.editReply('❌ Failed to create Kavita account. Invalid response from the API.');
             }
 
             await interaction.editReply(`✅ Account created! Finish setup here: ${inviteLink}`);
         } catch (error) {
-            console.error(`❌ Error while creating user:`, error);
+            printError('❌ Error while creating user:', error);
             return interaction.editReply('❌ An error occurred while creating your account. Please try again later.');
         }
     }

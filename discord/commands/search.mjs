@@ -1,5 +1,8 @@
+// /discord/commands/search.mjs — Kavita Series Search
+
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import kavita from '../../kavita/kavita.mjs';
+import kavita from '../../kavita/initKavita.mjs';
+import { printDebug, printError } from '../../noona/logger/logUtils.mjs';
 
 /**
  * Slash command for searching manga/comics in Kavita.
@@ -21,7 +24,7 @@ const command = {
     async execute(interaction) {
         await interaction.deferReply();
         const searchTerm = interaction.options.getString('title');
-        console.log(`🔍 Searching Kavita for: ${searchTerm}`);
+        printDebug(`[Search] ${interaction.user.tag} searching for "${searchTerm}"`);
 
         try {
             const results = await kavita.searchSeries(searchTerm);
@@ -48,7 +51,7 @@ const command = {
 
             await interaction.editReply({ embeds: [embed] });
         } catch (err) {
-            console.error(`❌ Error during search:`, err);
+            printError(`❌ Error during search:`, err);
             await interaction.editReply('❌ An error occurred while searching. Please try again later.');
         }
     }

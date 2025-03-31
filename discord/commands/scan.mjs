@@ -1,3 +1,5 @@
+// /discord/commands/scan.mjs — Library Scanner + Series Browser
+
 import {
     SlashCommandBuilder,
     ActionRowBuilder,
@@ -5,23 +7,18 @@ import {
     ButtonStyle,
     EmbedBuilder
 } from 'discord.js';
-import kavita from '../../kavita/kavita.mjs';
+import kavita from '../../kavita/initKavita.mjs';
+import { scanLibrary } from '../../kavita/postKavita.mjs';
+import { printDebug, printError } from '../../noona/logger/logUtils.mjs';
 
-/**
- * Slash command for scanning a specific Kavita library.
- */
 const command = {
     data: new SlashCommandBuilder()
         .setName('scan')
         .setDescription('Displays libraries and lets you select one to scan.'),
 
-    /**
-     * Executes the "scan" command interaction.
-     * @param {import('discord.js').ChatInputCommandInteraction} interaction
-     */
     async execute(interaction) {
         await interaction.deferReply();
-        console.log('📡 Fetching libraries from Kavita...');
+        printDebug(`[Scan] ${interaction.user.tag} requested library list`);
 
         const libraries = await kavita.getLibraries();
         if (!libraries?.length) {
@@ -39,9 +36,7 @@ const command = {
 export default command;
 
 /**
- * Generates button rows for libraries.
- * @param {Array} libraries
- * @returns {Array<ActionRowBuilder>}
+ * 🔘 Build Discord button components from library list
  */
 function buildLibraryButtons(libraries) {
     const buttons = libraries.map(lib =>
@@ -60,7 +55,7 @@ function buildLibraryButtons(libraries) {
 }
 
 /**
- * Handles a button click to select a library for scanning.
+ * 🔄 Handle button click → scan library
  */
 export async function handleLibrarySelection(interaction, libraryId) {
     await interaction.deferUpdate();
@@ -72,17 +67,17 @@ export async function handleLibrarySelection(interaction, libraryId) {
     }
 
     try {
-        await kavita.scanLibrary(libraryId);
-        console.log(`✅ Scan initiated for library: ${library.name}`);
+        await scanLibrary(libraryId);
+        printDebug(`[Scan] Scan initiated for ${library.name} by ${interaction.user.tag}`);
     } catch (err) {
-        console.error(`❌ Failed to scan library: ${err.message}`);
+        printError(`❌ Failed to scan library: ${err.message}`);
     }
 
     await handleSeriesPage(interaction, libraryId, 0, true);
 }
 
 /**
- * Displays a paginated embed of series in the selected library.
+ * 📖 Show paginated list of series in library
  */
 export async function handleSeriesPage(interaction, libraryId, page = 0, alreadyDeferred = false) {
     if (!alreadyDeferred) await interaction.deferUpdate();
@@ -144,7 +139,7 @@ export async function handleSeriesPage(interaction, libraryId, page = 0, already
 }
 
 /**
- * Shows details for a single series in the embed.
+ * 📄 Format details for series
  */
 function formatSeriesDetails(series) {
     const createdDate = series.created ? new Date(series.created).toLocaleDateString() : 'Unknown';
@@ -160,7 +155,7 @@ function formatSeriesDetails(series) {
 }
 
 /**
- * Maps format number to string label.
+ * 🔣 Format type from Kavita ID
  */
 function formatType(format) {
     const formats = {
@@ -170,7 +165,7 @@ function formatType(format) {
 }
 
 /**
- * Shows individual series details.
+ * 📘 View full series details
  */
 export async function handleSeriesSelection(interaction, seriesId) {
     await interaction.deferUpdate();
@@ -197,7 +192,7 @@ export async function handleSeriesSelection(interaction, seriesId) {
 
         await interaction.editReply({ embeds: [embed], components: [actionRow] });
     } catch (err) {
-        console.error('❌ Error fetching series details:', err);
+        printError('❌ Error fetching series details:', err);
         await interaction.editReply({ content: '❌ Error fetching series details.', components: [] });
     }
 }

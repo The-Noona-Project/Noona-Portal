@@ -1,5 +1,13 @@
+// /discord/commands/admin.mjs — Admin Tools for Kavita
+
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
-import kavita from '../../kavita/kavita.mjs';
+import kavita from '../../kavita/initKavita.mjs';
+import {
+    updateUserRoles,
+    scanAllLibraries,
+    scanSingleLibrary
+} from '../../kavita/postKavita.mjs';
+import { printError } from '../../noona/logger/logUtils.mjs';
 
 const command = {
     data: new SlashCommandBuilder()
@@ -67,14 +75,14 @@ const command = {
 
             const userId = await kavita.getUserIdByEmail(email);
             if (!userId) {
-                return interaction.editReply(`User with email ${email} not found.`);
+                return interaction.editReply(`❌ User with email ${email} not found.`);
             }
 
-            const result = await kavita.updateUserRoles(userId, [role]);
+            const result = await updateUserRoles(userId, [role]);
             if (result) {
-                return interaction.editReply(`✅ Updated role to ${role} for ${email}`);
+                return interaction.editReply(`✅ Updated role to **${role}** for **${email}**`);
             } else {
-                return interaction.editReply(`❌ Failed to update role for ${email}`);
+                return interaction.editReply(`❌ Failed to update role for **${email}**`);
             }
         }
 
@@ -84,8 +92,8 @@ const command = {
                 if (!stats) return interaction.editReply('❌ Failed to fetch server statistics.');
 
                 const embed = new EmbedBuilder()
-                    .setTitle('Kavita Server Stats')
-                    .setColor(0x0099FF)
+                    .setTitle('📊 Kavita Server Stats')
+                    .setColor(0x5865F2)
                     .setTimestamp();
 
                 const fields = [
@@ -107,16 +115,24 @@ const command = {
                 });
 
                 if (stats.mostReadSeries?.[0]?.value?.name) {
-                    embed.addFields({ name: 'Most Read Series', value: stats.mostReadSeries[0].value.name });
+                    embed.addFields({
+                        name: '📖 Most Read Series',
+                        value: stats.mostReadSeries[0].value.name,
+                        inline: false
+                    });
                 }
 
                 if (stats.mostActiveLibraries?.[0]?.value?.name) {
-                    embed.addFields({ name: 'Most Active Library', value: stats.mostActiveLibraries[0].value.name });
+                    embed.addFields({
+                        name: '🏛️ Most Active Library',
+                        value: stats.mostActiveLibraries[0].value.name,
+                        inline: false
+                    });
                 }
 
                 return interaction.editReply({ embeds: [embed] });
             } catch (err) {
-                console.error('❌ Failed to fetch server stats:', err);
+                printError('❌ Failed to fetch server stats:', err);
                 return interaction.editReply('❌ Error fetching server statistics.');
             }
         }
@@ -126,10 +142,10 @@ const command = {
 
             if (task === 'scan-libraries') {
                 try {
-                    await kavita.scanAllLibraries();
+                    await scanAllLibraries();
                     return interaction.editReply('✅ Scan for all libraries started.');
                 } catch (err) {
-                    console.error('❌ Failed to scan all libraries:', err);
+                    printError('❌ Failed to scan all libraries:', err);
                     return interaction.editReply('❌ Could not scan all libraries.');
                 }
             }
@@ -148,17 +164,14 @@ const command = {
                         return interaction.editReply(`❌ Library "${libraryQuery}" not found.`);
                     }
 
-                    const url = `/api/Library/scan?libraryId=${library.id}&force=${force}`;
-                    await kavita.fetchData(url, 'POST');
-
-                    return interaction.editReply(`✅ Scan started for library: ${library.name} (${force ? 'forced' : 'normal'})`);
+                    await scanSingleLibrary(library.id, force);
+                    return interaction.editReply(`✅ Scan started for library: **${library.name}** (${force ? 'forced' : 'normal'})`);
                 } catch (err) {
-                    console.error('❌ Failed to scan library:', err);
+                    printError('❌ Failed to scan library:', err);
                     return interaction.editReply(`❌ Failed to scan library "${libraryQuery}".`);
                 }
             }
 
-            // Basic tasks (clear-cache, cleanup, backup-db)
             const endpoints = {
                 'clear-cache': '/api/Server/clear-cache',
                 'cleanup': '/api/Server/cleanup',
@@ -169,9 +182,9 @@ const command = {
             if (endpoint) {
                 try {
                     await kavita.fetchData(endpoint, 'POST');
-                    return interaction.editReply(`✅ ${task} started successfully.`);
+                    return interaction.editReply(`✅ ${task.replace('-', ' ')} started successfully.`);
                 } catch (err) {
-                    console.error(`❌ Failed ${task}:`, err);
+                    printError(`❌ Failed ${task}:`, err);
                     return interaction.editReply(`❌ ${task} failed.`);
                 }
             }
@@ -200,7 +213,7 @@ const command = {
 
                 await interaction.respond(matches);
             } catch (err) {
-                console.error('❌ Autocomplete failed:', err);
+                printError('❌ Autocomplete failed:', err);
                 await interaction.respond([]);
             }
         }

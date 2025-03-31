@@ -1,78 +1,80 @@
-// ✅ /discord/tasks/libraryNotifications.mjs — Warden-Aware Notifier (Redis Auth + Logger)
+// /discord/tasks/libraryNotifications.mjs — Warden-Aware Notifier (Vault Auth + Structured Logging)
 
-import { sendNewItemNotifications } from '../../kavita/kavita.mjs';
-import * as vault from '../../noona/vault/vault.mjs';
+import { sendNewItemNotifications } from '../../kavita/postKavita.mjs';
+import * as vault from '../../noona/vault/initVault.mjs';
 import {
     printStep,
     printDebug,
     printResult,
-    printError
+    printError,
+    printSection
 } from '../../noona/logger/logUtils.mjs';
 
 let interval = null;
 
 /**
- * 📥 Load previously notified item IDs from Vault via Redis-auth.
+ * 📂 Load notified item IDs from Vault.
  */
 async function loadNotifiedIds() {
-    printStep('📂 Loading previously notified item IDs from Vault...');
-
+    printStep('[Notifier] 📥 Loading previously notified item IDs from Vault...');
     try {
         const ids = await vault.getNotifiedIds();
-        printResult(`📂 Loaded ${ids.length} previously notified items from Vault`);
+        printResult(`[Notifier] ✅ Loaded ${ids.length} previously notified items from Vault`);
         return new Set(ids);
     } catch (err) {
-        printError('[Vault] ❌ Failed to load notified IDs:', err?.response?.data || err.message);
+        printError('[Notifier] ❌ Failed to load notified IDs:', err?.response?.data || err.message);
         return new Set();
     }
 }
 
 /**
- * 🛎️ Set up the scheduled library notification service.
+ * 🔁 Run notification cycle: check and notify.
+ */
+async function runCheck(discordClient, notifiedIds, label = 'manual/initial') {
+    const newItems = await sendNewItemNotifications(discordClient, notifiedIds);
+
+    if (newItems.length > 0) {
+        try {
+            await vault.saveNotifiedIds([...notifiedIds]);
+            printResult(`[Notifier] ✅ Saved ${notifiedIds.size} notified IDs to Vault after "${label}" check`);
+        } catch (err) {
+            printError('[Notifier] ❌ Failed to save notified IDs:', err?.response?.data || err.message);
+        }
+    } else {
+        printDebug(`[Notifier] 📭 No new items found during "${label}" check.`);
+    }
+}
+
+/**
+ * 🛎️ Set up scheduled library notification service.
  */
 export async function setupLibraryNotifications(discordClient) {
+    printSection('📡 Library Notification Service Booting...');
+
     if (!discordClient) {
-        printError('⚠️  Discord client is not ready. Notifications skipped.');
+        printError('[Notifier] ⚠️ Discord client is not ready. Notifications skipped.');
         return;
     }
 
     if (interval) {
         clearInterval(interval);
-        printDebug('🔁 Existing notification interval cleared.');
+        printDebug('[Notifier] 🔄 Existing notification interval cleared.');
     }
 
     const intervalHours = parseInt(process.env.CHECK_INTERVAL_HOURS, 10);
     if (isNaN(intervalHours) || intervalHours < 1) {
-        printError('❌ Invalid CHECK_INTERVAL_HOURS provided.');
+        printError('[Notifier] ❌ Invalid CHECK_INTERVAL_HOURS in environment.');
         return;
     }
 
     const intervalMs = intervalHours * 60 * 60 * 1000;
     const notifiedIds = await loadNotifiedIds();
 
-    /**
-     * 🔄 Check for new items and notify users.
-     */
-    async function runCheck(label = 'manual/initial') {
-        const newItems = await sendNewItemNotifications(discordClient, notifiedIds);
+    // Run first check shortly after boot
+    setTimeout(() => runCheck(discordClient, notifiedIds, 'initial'), 10_000);
 
-        if (newItems.length > 0) {
-            try {
-                await vault.saveNotifiedIds([...notifiedIds]);
-                printResult(`✅ Saved ${notifiedIds.size} notified IDs to Vault after ${label} check.`);
-            } catch (err) {
-                printError('[Vault] ❌ Failed to save notified IDs:', err?.response?.data || err.message);
-            }
-        } else {
-            printDebug(`📭 No new items found during ${label} check.`);
-        }
-    }
+    // Start scheduled interval
+    interval = setInterval(() => runCheck(discordClient, notifiedIds, 'scheduled'), intervalMs);
 
-    // Run once shortly after boot
-    setTimeout(() => runCheck('initial'), 10_000);
-
-    // Start scheduled loop
-    interval = setInterval(() => runCheck('scheduled'), intervalMs);
-
-    printResult(`✅ Library notification service initialized - checking every ${intervalHours} hour(s)`);
+    printResult(`[Notifier] ✅ Library notification service initialized — checking every ${intervalHours} hour(s)`);
 }
