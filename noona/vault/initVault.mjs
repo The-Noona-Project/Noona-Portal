@@ -127,14 +127,21 @@ export async function saveNotifiedIds(ids = []) {
         return false;
     }
 
-    const url = '/v1/notifications/kavita';
+    const url = `${VAULT_URL}/v1/notifications/kavita`;
+    const headers = await getAuthHeaders();
     printStep(`[Vault] 📤 Saving ${ids.length} notified IDs to ${url}`);
 
+    if (!headers || !headers.Authorization) {
+        printError('[Vault] ❌ Cannot save notified IDs: Failed to generate auth headers.');
+        return false;
+    }
+
     try {
-        const result = await postVault(url, { ids });
-        return !!result?.success;
+        const res = await axios.post(url, { ids }, { headers });
+        printDebug(`[Vault] Save response status: ${res.status}`);
+        return res.status === 200 || res.status === 201;
     } catch (err) {
-        printError(`[Vault] ❌ Failed to save notified IDs: ${err?.response?.data?.message || err.message}`);
+        printError(`[Vault] ❌ Failed to save notified IDs: ${err?.response?.status} ${err?.response?.data?.message || err.message}`);
         return false;
     }
 }
