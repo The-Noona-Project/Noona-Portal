@@ -3,8 +3,8 @@
 import { setupDiscord } from './discord/initDiscord.mjs';
 import { setupLibraryNotifications } from './discord/tasks/libraryNotifications.mjs';
 import { authenticateWithKavita } from './kavita/initKavita.mjs';
-import { getVaultToken, waitForVaultReady } from './noona/vault/initVault.mjs';
-import { checkKeys } from './noona/vault/auth/checkKeys.mjs';
+import { waitForVaultReady } from './noona/vault/initVault.mjs';
+import { initAuth } from './noona/vault/auth/initAuth.mjs';
 import { printBootSummary } from './noona/logger/printBootSummary.mjs';
 import {
     printHeader,
@@ -98,16 +98,18 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
         summary.push({ name: 'Vault Connection', info: err.message, ready: false });
     }
 
-    // 2. 🔐 JWT Key Pair Check
-    printStep('🔐 Verifying JWT key pair...');
+    // 2. 🔐 Initialize Auth (includes publicKey fetch + pair check)
+    printStep('🔐 Initializing Auth...');
     try {
-        const keysValid = await checkKeys();
-        if (!keysValid) throw new Error('Key pair mismatch or invalid');
-        summary.push({ name: 'JWT Keys', info: 'Key pair is valid', ready: true });
+        const authReady = await initAuth();
+        if (!authReady) throw new Error('Auth setup failed');
+        printResult('✅ Auth system initialized');
+        summary.push({ name: 'Auth', info: 'JWT keys verified and cached', ready: true });
     } catch (err) {
-        printError(`❌ JWT Key check failed: ${err.message}`);
-        summary.push({ name: 'JWT Keys', info: err.message, ready: false });
+        printError(`❌ Auth init failed: ${err.message}`);
+        summary.push({ name: 'Auth', info: err.message, ready: false });
     }
+
 
     // 3. 🗝️ Vault Token Fetch (optional for headers)
     printStep('🔑 Getting Vault token from Redis...');

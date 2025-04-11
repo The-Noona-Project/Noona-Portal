@@ -1,21 +1,18 @@
 // /noona/vault/checkKeys.mjs — Verifies private/public JWT key pair
 import jwt from 'jsonwebtoken';
 import { printStep, printError, printDebug } from '../../logger/logUtils.mjs';
-import { getPublicKey } from './getPublicKey.mjs';
 
-export async function checkKeys() {
+/**
+ * Validates the private/public key pair using a signed test token.
+ * @param {string} privateKey
+ * @param {string} publicKey
+ * @returns {Promise<boolean>}
+ */
+export async function checkKeyPair(privateKey, publicKey) {
     printStep('[Auth] Verifying JWT key pair...');
 
-    const privateKey = process.env.JWT_PRIVATE_KEY;
-    if (!privateKey) {
-        printError('[Auth] Private key is missing in environment');
-        return false;
-    }
-    printDebug('[Auth] Loaded private key from environment');
-
-    const publicKey = await getPublicKey();
-    if (!publicKey) {
-        printError('[Auth] Public key could not be retrieved from Vault');
+    if (!privateKey || !publicKey) {
+        printError('[Auth] ❌ One or both keys are missing');
         return false;
     }
 
@@ -27,10 +24,10 @@ export async function checkKeys() {
         );
 
         const decoded = jwt.verify(testToken, publicKey, { algorithms: ['RS256'] });
-        printDebug(`[Auth] JWT test token verified: ${decoded.sub}`);
+        printDebug(`[Auth] ✅ JWT key pair valid — test token: ${decoded.sub}`);
         return true;
     } catch (err) {
-        printError(`[Auth] JWT key verification failed: ${err.message}`);
+        printError(`[Auth] ❌ JWT key verification failed: ${err.message}`);
         return false;
     }
 }
