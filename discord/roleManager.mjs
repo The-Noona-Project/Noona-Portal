@@ -1,4 +1,11 @@
-// /discord/roleManager.mjs — Warden-Style Role Enforcement
+/**
+ * @fileoverview
+ * Discord Role Enforcement Middleware for Noona-Portal
+ *
+ * Enforces per-command role validation using environment variables.
+ *
+ * @module roleManager
+ */
 
 import {
     printError,
@@ -6,7 +13,12 @@ import {
 } from '../noona/logger/logUtils.mjs';
 
 /**
- * Map of restricted commands and the required ENV role key.
+ * Map of command names to required environment role keys.
+ * These environment variables should contain the role ID (as a string).
+ *
+ * Example:
+ * - /admin → process.env.REQUIRED_ROLE_ADMIN
+ * - /scan → process.env.REQUIRED_ROLE_MOD
  */
 const restrictedCommands = {
     admin: 'REQUIRED_ROLE_ADMIN',
@@ -17,20 +29,23 @@ const restrictedCommands = {
 };
 
 /**
- * Enforces role-based access control for Discord commands.
- * @param {import('discord/initDiscord.mjs').ChatInputCommandInteraction} interaction
- * @returns {boolean}
+ * Validates whether the user invoking the command has the appropriate role.
+ * Handles and replies to the interaction if the check fails.
+ *
+ * @param {import('discord.js').ChatInputCommandInteraction} interaction - The Discord interaction object
+ * @returns {boolean} True if the user is authorized to use the command, false if denied and handled.
  */
 export function hasRequiredRole(interaction) {
     const commandName = interaction.commandName;
     const requiredEnvKey = restrictedCommands[commandName];
 
-    // ✅ Unrestricted command
+    // If no restriction for this command, allow by default
     if (!requiredEnvKey) return true;
 
     const requiredRoleID = process.env[requiredEnvKey];
     const requiredGuildID = process.env.REQUIRED_GUILD_ID;
 
+    // Validate guild (server) origin
     if (requiredGuildID && interaction.guildId !== requiredGuildID) {
         printError(`[RoleCheck] ❌ Guild mismatch for /${commandName}`);
         interaction.reply({
@@ -40,6 +55,7 @@ export function hasRequiredRole(interaction) {
         return false;
     }
 
+    // Validate that the role environment variable is defined
     if (!requiredRoleID) {
         printError(`[RoleCheck] ❌ ENV missing: ${requiredEnvKey}`);
         interaction.reply({
@@ -49,6 +65,7 @@ export function hasRequiredRole(interaction) {
         return false;
     }
 
+    // Fetch member from the guild and check if the role exists
     const member = interaction.guild.members.cache.get(interaction.user.id);
     const hasRole = member?.roles.cache.has(requiredRoleID) ?? false;
 

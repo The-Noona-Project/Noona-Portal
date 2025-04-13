@@ -1,4 +1,12 @@
-// /kavita/initKavita.mjs — Kavita API Handler (Initialization & Read Operations)
+/**
+ * @fileoverview
+ * Kavita API Handler for Noona-Portal (Initialization & Read Operations)
+ *
+ * Handles authentication, library search, recently added content, and user info lookup.
+ * This module provides a singleton Kavita API instance and wraps safe calls with auto-auth fallback.
+ *
+ * @module initKavita
+ */
 
 import axios from 'axios';
 import dotenv from 'dotenv';
@@ -13,6 +21,10 @@ class KavitaAPI {
         this.jwtToken = null;
     }
 
+    /**
+     * Authenticates with Kavita and stores the JWT token.
+     * @returns {Promise<boolean>}
+     */
     async authenticate() {
         const url = `${this.baseUrl}/api/Plugin/authenticate?apiKey=${this.apiKey}&pluginName=NoonaPortal`;
         printStep('[Kavita] Authenticating with Kavita...');
@@ -27,6 +39,16 @@ class KavitaAPI {
         }
     }
 
+    /**
+     * Sends an authenticated request to Kavita API.
+     * Auto re-authenticates if token is missing or expired.
+     *
+     * @param {string} endpoint - API endpoint to hit
+     * @param {'GET'|'POST'|'PUT'} [method='GET'] - HTTP method
+     * @param {object|null} [data=null] - Optional payload
+     * @param {object|null} [queryParams=null] - Optional query params
+     * @returns {Promise<any|null>}
+     */
     async fetchData(endpoint, method = 'GET', data = null, queryParams = null) {
         if (!this.jwtToken) {
             printDebug('[Kavita] No token cached — authenticating...');
@@ -77,16 +99,26 @@ class KavitaAPI {
         }
     }
 
+    /** @returns {Promise<any[]>} */
     async getLibraries() {
         return await this.fetchData('/api/Library/libraries');
     }
 
+    /**
+     * @param {string} term - Search term
+     * @returns {Promise<any[]>}
+     */
     async searchSeries(term) {
         return await this.fetchData('/api/Search/search', 'GET', null, {
             queryString: encodeURIComponent(term)
         });
     }
 
+    /**
+     * @param {number|null} libraryId
+     * @param {number} [days=7]
+     * @returns {Promise<any[]>}
+     */
     async getRecentlyAdded(libraryId = null, days = 7) {
         const endpoint = libraryId
             ? `/api/Series/recently-added?libraryId=${libraryId}&days=${days}`
@@ -94,10 +126,18 @@ class KavitaAPI {
         return await this.fetchData(endpoint);
     }
 
+    /**
+     * @param {number} userId
+     * @returns {Promise<any[]>}
+     */
     async getUserRoles(userId) {
         return await this.fetchData(`/api/Users/${userId}/roles`);
     }
 
+    /**
+     * @param {string} email
+     * @returns {Promise<number|null>} User ID or null
+     */
     async getUserIdByEmail(email) {
         const users = await this.fetchData('/api/Users');
         if (!users) return null;
@@ -107,6 +147,7 @@ class KavitaAPI {
 }
 
 const instance = new KavitaAPI();
+
 export default instance;
 export const authenticateWithKavita = () => instance.authenticate();
 export const getLibraries = () => instance.getLibraries();

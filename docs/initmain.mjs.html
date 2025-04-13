@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>initmain.mjs - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-checkKeys.html">checkKeys</a><ul class='methods'><li data-type='method'><a href="module-checkKeys.html#.checkKeyPair">checkKeyPair</a></li></ul></li><li><a href="module-commandManager.html">commandManager</a><ul class='methods'><li data-type='method'><a href="module-commandManager.html#~getCommandCount">getCommandCount</a></li><li data-type='method'><a href="module-commandManager.html#~loadCommands">loadCommands</a></li><li data-type='method'><a href="module-commandManager.html#~registerCommands">registerCommands</a></li></ul></li><li><a href="module-commands_admin.html">commands/admin</a><ul class='methods'><li data-type='method'><a href="module-commands_admin.html#~formatFileSize">formatFileSize</a></li><li data-type='method'><a href="module-commands_admin.html#~formatReadingTime">formatReadingTime</a></li></ul></li><li><a href="module-commands_ding.html">commands/ding</a></li><li><a href="module-commands_join.html">commands/join</a><ul class='methods'><li data-type='method'><a href="module-commands_join.html#~validateEmail">validateEmail</a></li></ul></li><li><a href="module-commands_scan.html">commands/scan</a><ul class='methods'><li data-type='method'><a href="module-commands_scan.html#.handleLibrarySelection">handleLibrarySelection</a></li><li data-type='method'><a href="module-commands_scan.html#.handleSeriesPage">handleSeriesPage</a></li><li data-type='method'><a href="module-commands_scan.html#.handleSeriesSelection">handleSeriesSelection</a></li><li data-type='method'><a href="module-commands_scan.html#~buildLibraryButtons">buildLibraryButtons</a></li><li data-type='method'><a href="module-commands_scan.html#~formatSeriesDetails">formatSeriesDetails</a></li><li data-type='method'><a href="module-commands_scan.html#~formatType">formatType</a></li></ul></li><li><a href="module-commands_search.html">commands/search</a></li><li><a href="module-initDiscord.html">initDiscord</a><ul class='methods'><li data-type='method'><a href="module-initDiscord.html#~setupDiscord">setupDiscord</a></li></ul></li><li><a href="module-initKavita.html">initKavita</a></li><li><a href="module-initmain.html">initmain</a><ul class='methods'><li data-type='method'><a href="module-initmain.html#~gracefulShutdown">gracefulShutdown</a></li></ul></li><li><a href="module-logUtils.html">logUtils</a><ul class='methods'><li data-type='method'><a href="module-logUtils.html#.printAction">printAction</a></li><li data-type='method'><a href="module-logUtils.html#.printBanner">printBanner</a></li><li data-type='method'><a href="module-logUtils.html#.printDebug">printDebug</a></li><li data-type='method'><a href="module-logUtils.html#.printDivider">printDivider</a></li><li data-type='method'><a href="module-logUtils.html#.printDownloadSummary">printDownloadSummary</a></li><li data-type='method'><a href="module-logUtils.html#.printError">printError</a></li><li data-type='method'><a href="module-logUtils.html#.printHeader">printHeader</a></li><li data-type='method'><a href="module-logUtils.html#.printNote">printNote</a></li><li data-type='method'><a href="module-logUtils.html#.printProgressBar">printProgressBar</a></li><li data-type='method'><a href="module-logUtils.html#.printResult">printResult</a></li><li data-type='method'><a href="module-logUtils.html#.printSection">printSection</a></li><li data-type='method'><a href="module-logUtils.html#.printSpacer">printSpacer</a></li><li data-type='method'><a href="module-logUtils.html#.printStep">printStep</a></li><li data-type='method'><a href="module-logUtils.html#.printSubHeader">printSubHeader</a></li><li data-type='method'><a href="module-logUtils.html#.printWarning">printWarning</a></li></ul></li><li><a href="module-postKavita.html">postKavita</a><ul class='methods'><li data-type='method'><a href="module-postKavita.html#.checkForNewItems">checkForNewItems</a></li><li data-type='method'><a href="module-postKavita.html#.createUser">createUser</a></li><li data-type='method'><a href="module-postKavita.html#.getSeriesByLibrary">getSeriesByLibrary</a></li><li data-type='method'><a href="module-postKavita.html#.scanAllLibraries">scanAllLibraries</a></li><li data-type='method'><a href="module-postKavita.html#.scanLibrary">scanLibrary</a></li><li data-type='method'><a href="module-postKavita.html#.scanSingleLibrary">scanSingleLibrary</a></li><li data-type='method'><a href="module-postKavita.html#.sendNewItemNotifications">sendNewItemNotifications</a></li><li data-type='method'><a href="module-postKavita.html#.updateUserRoles">updateUserRoles</a></li></ul></li><li><a href="module-roleManager.html">roleManager</a><ul class='methods'><li data-type='method'><a href="module-roleManager.html#.hasRequiredRole">hasRequiredRole</a></li></ul></li><li><a href="module-vault_initVault.html">vault/initVault</a><ul class='methods'><li data-type='method'><a href="module-vault_initVault.html#~getAuthHeaders">getAuthHeaders</a></li><li data-type='method'><a href="module-vault_initVault.html#~getNotifiedIds">getNotifiedIds</a></li><li data-type='method'><a href="module-vault_initVault.html#~getPublicKey">getPublicKey</a></li><li data-type='method'><a href="module-vault_initVault.html#~saveNotifiedIds">saveNotifiedIds</a></li><li data-type='method'><a href="module-vault_initVault.html#~waitForVaultReady">waitForVaultReady</a></li></ul></li></ul><h3>Global</h3><ul><li><a href="global.html#fetchPublicKeyFromVault">fetchPublicKeyFromVault</a></li><li><a href="global.html#getAuthMode">getAuthMode</a></li><li><a href="global.html#getPublicKeyFromMemory">getPublicKeyFromMemory</a></li><li><a href="global.html#initAuth">initAuth</a></li><li><a href="global.html#loadNotifiedIds">loadNotifiedIds</a></li><li><a href="global.html#postVault">postVault</a></li><li><a href="global.html#printBootSummary">printBootSummary</a></li><li><a href="global.html#runCheck">runCheck</a></li><li><a href="global.html#setupLibraryNotifications">setupLibraryNotifications</a></li><li><a href="global.html#validateEnv">validateEnv</a></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">initmain.mjs</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @fileoverview
+ * Noona-Portal Boot Logic (v1.0.2)
+ *
+ * Starts the Portal service with resilience checks for:
+ * - Vault availability and public key sync
+ * - Kavita API authentication
+ * - Discord bot setup
+ * - Library notification service
+ * - Graceful shutdown handling
+ *
+ * @module initmain
+ */
+
+import { setupDiscord } from './discord/initDiscord.mjs';
+import { setupLibraryNotifications } from './discord/tasks/libraryNotifications.mjs';
+import { authenticateWithKavita } from './kavita/initKavita.mjs';
+import { waitForVaultReady } from './noona/vault/initVault.mjs';
+import { initAuth } from './noona/vault/auth/initAuth.mjs';
+import { printBootSummary } from './noona/logger/printBootSummary.mjs';
+import {
+    printHeader,
+    printStep,
+    printResult,
+    printError,
+    printDebug,
+    printDivider,
+    printSection
+} from './noona/logger/logUtils.mjs';
+import { validateEnv } from './noona/logger/validateEnv.mjs';
+
+const SKIP_KEY_CHECK = process.env.SKIP_KEY_CHECK === 'true';
+const VAULT_URL = process.env.VAULT_URL || 'http://localhost:3120';
+
+// ─────────────────────────────────────────────
+// 🧪 Validate Environment Variables
+// ─────────────────────────────────────────────
+validateEnv(
+    [
+        'KAVITA_URL',
+        'KAVITA_API_KEY',
+        'KAVITA_LIBRARY_IDS',
+        'DISCORD_TOKEN',
+        'DISCORD_CLIENT_ID',
+        'REQUIRED_GUILD_ID',
+        'REQUIRED_ROLE_ADMIN',
+        'REQUIRED_ROLE_MOD',
+        'REQUIRED_ROLE_USER',
+        'NOTIFICATION_CHANNEL_ID',
+        'VAULT_URL',
+        'JWT_PRIVATE_KEY',
+        'PORTAL_PORT'
+    ],
+    ['CHECK_INTERVAL_HOURS', 'KAVITA_LOOKBACK_HOURS']
+);
+
+// ─────────────────────────────────────────────
+// 🌙 Runtime State
+// ─────────────────────────────────────────────
+let discordClient = null;
+let shutdownInProgress = false;
+
+// ─────────────────────────────────────────────
+// 💥 Graceful Shutdown
+// ─────────────────────────────────────────────
+
+/**
+ * Handles termination signals and cleanly shuts down Discord bot.
+ * @param {string} signal - OS signal string
+ */
+async function gracefulShutdown(signal) {
+    if (shutdownInProgress) return;
+    shutdownInProgress = true;
+
+    printDivider();
+    printStep(`⚠️  Received ${signal}. Shutting down Noona-Portal...`);
+
+    try {
+        if (discordClient) {
+            printStep('🧼 Destroying Discord client...');
+            await discordClient.destroy();
+            printResult('✅ Discord client shut down.');
+        }
+
+        printResult('🌙 Cleanup complete.');
+    } catch (err) {
+        printError(`❌ Error during shutdown: ${err.message}`);
+    } finally {
+        printDivider();
+        printResult('👋 Noona-Portal exited gracefully.');
+        process.exit(0);
+    }
+}
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
+// ─────────────────────────────────────────────
+// 🚀 Main Boot Sequence
+// ─────────────────────────────────────────────
+(async () => {
+    console.log('');
+    printHeader('Noona-Portal');
+    printSection('🛠️ Initializing Portal Environment...');
+
+    const summary = [];
+
+    // 1. 📡 Vault Availability Check
+    printStep('📡 Checking Vault availability...');
+    try {
+        const vaultReady = await waitForVaultReady();
+        if (!vaultReady) throw new Error('Timeout or network failure');
+        printResult('✅ Vault is online.');
+        summary.push({ name: 'Vault Connection', info: 'Responding at /health', ready: true });
+    } catch (err) {
+        printError(`❌ Vault check failed: ${err.message}`);
+        summary.push({ name: 'Vault Connection', info: err.message, ready: false });
+    }
+
+    // 2. 🔐 Initialize Auth (includes publicKey fetch + pair check)
+    printStep('🔐 Initializing Auth...');
+    try {
+        const authReady = await initAuth();
+        if (!authReady) throw new Error('Auth setup failed');
+        printResult('✅ Auth system initialized');
+        summary.push({ name: 'Auth', info: 'JWT keys verified and cached', ready: true });
+    } catch (err) {
+        printError(`❌ Auth init failed: ${err.message}`);
+        summary.push({ name: 'Auth', info: err.message, ready: false });
+    }
+
+    // 3. 🔑 Vault Auth (No longer uses token — now tracked via public key only)
+    printStep('🔑 Skipping Vault token logic (public-key-only system)');
+    summary.push({ name: 'Vault Auth', info: 'Token removed — using publicKey only', ready: false });
+
+    // 4. 📚 Kavita Authentication
+    printStep('📚 Authenticating with Kavita...');
+    try {
+        const success = await authenticateWithKavita();
+        if (!success) throw new Error('Authentication failed');
+        printResult('✅ Kavita authentication successful.');
+        summary.push({ name: 'Kavita API', info: 'Authenticated successfully', ready: true });
+    } catch (err) {
+        printError(`❌ Kavita auth failed: ${err.message}`);
+        summary.push({ name: 'Kavita API', info: err.message, ready: false });
+    }
+
+    // 5. 🤖 Discord Bot Startup
+    printStep('🤖 Starting Discord bot...');
+    try {
+        const result = await setupDiscord();
+        discordClient = result.client;
+        summary.push({
+            name: 'Discord Bot',
+            info: `Client logged in (${result.commandCount} commands)`,
+            ready: true
+        });
+    } catch (err) {
+        printError(`❌ Discord bot init failed: ${err.message}`);
+        summary.push({ name: 'Discord Bot', info: err.message, ready: false });
+    }
+
+    // 6. 🔔 Notification Scheduler
+    printStep('🔔 Initializing notification service...');
+    try {
+        if (!discordClient) throw new Error('Skipped (no Discord client)');
+        await setupLibraryNotifications(discordClient);
+        const interval = process.env.CHECK_INTERVAL_HOURS || '168';
+        printDebug(`CHECK_INTERVAL_HOURS=${interval} [NODE_ENV: ${process.env.NODE_ENV}]`);
+        summary.push({
+            name: 'Library Notifier',
+            info: `Initialized (interval: ${interval}hr)`,
+            ready: true
+        });
+    } catch (err) {
+        printError(`❌ Library notifier failed: ${err.message}`);
+        summary.push({ name: 'Library Notifier', info: err.message, ready: false });
+    }
+
+    // ✅ Boot Summary Table
+    printBootSummary(summary);
+})();
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.4</a> on Sun Apr 13 2025 10:04:39 GMT-0700 (Pacific Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>

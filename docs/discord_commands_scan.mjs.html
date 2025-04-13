@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>discord/commands/scan.mjs - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-checkKeys.html">checkKeys</a><ul class='methods'><li data-type='method'><a href="module-checkKeys.html#.checkKeyPair">checkKeyPair</a></li></ul></li><li><a href="module-commandManager.html">commandManager</a><ul class='methods'><li data-type='method'><a href="module-commandManager.html#~getCommandCount">getCommandCount</a></li><li data-type='method'><a href="module-commandManager.html#~loadCommands">loadCommands</a></li><li data-type='method'><a href="module-commandManager.html#~registerCommands">registerCommands</a></li></ul></li><li><a href="module-commands_admin.html">commands/admin</a><ul class='methods'><li data-type='method'><a href="module-commands_admin.html#~formatFileSize">formatFileSize</a></li><li data-type='method'><a href="module-commands_admin.html#~formatReadingTime">formatReadingTime</a></li></ul></li><li><a href="module-commands_ding.html">commands/ding</a></li><li><a href="module-commands_join.html">commands/join</a><ul class='methods'><li data-type='method'><a href="module-commands_join.html#~validateEmail">validateEmail</a></li></ul></li><li><a href="module-commands_scan.html">commands/scan</a><ul class='methods'><li data-type='method'><a href="module-commands_scan.html#.handleLibrarySelection">handleLibrarySelection</a></li><li data-type='method'><a href="module-commands_scan.html#.handleSeriesPage">handleSeriesPage</a></li><li data-type='method'><a href="module-commands_scan.html#.handleSeriesSelection">handleSeriesSelection</a></li><li data-type='method'><a href="module-commands_scan.html#~buildLibraryButtons">buildLibraryButtons</a></li><li data-type='method'><a href="module-commands_scan.html#~formatSeriesDetails">formatSeriesDetails</a></li><li data-type='method'><a href="module-commands_scan.html#~formatType">formatType</a></li></ul></li><li><a href="module-commands_search.html">commands/search</a></li><li><a href="module-initDiscord.html">initDiscord</a><ul class='methods'><li data-type='method'><a href="module-initDiscord.html#~setupDiscord">setupDiscord</a></li></ul></li><li><a href="module-initKavita.html">initKavita</a></li><li><a href="module-initmain.html">initmain</a><ul class='methods'><li data-type='method'><a href="module-initmain.html#~gracefulShutdown">gracefulShutdown</a></li></ul></li><li><a href="module-logUtils.html">logUtils</a><ul class='methods'><li data-type='method'><a href="module-logUtils.html#.printAction">printAction</a></li><li data-type='method'><a href="module-logUtils.html#.printBanner">printBanner</a></li><li data-type='method'><a href="module-logUtils.html#.printDebug">printDebug</a></li><li data-type='method'><a href="module-logUtils.html#.printDivider">printDivider</a></li><li data-type='method'><a href="module-logUtils.html#.printDownloadSummary">printDownloadSummary</a></li><li data-type='method'><a href="module-logUtils.html#.printError">printError</a></li><li data-type='method'><a href="module-logUtils.html#.printHeader">printHeader</a></li><li data-type='method'><a href="module-logUtils.html#.printNote">printNote</a></li><li data-type='method'><a href="module-logUtils.html#.printProgressBar">printProgressBar</a></li><li data-type='method'><a href="module-logUtils.html#.printResult">printResult</a></li><li data-type='method'><a href="module-logUtils.html#.printSection">printSection</a></li><li data-type='method'><a href="module-logUtils.html#.printSpacer">printSpacer</a></li><li data-type='method'><a href="module-logUtils.html#.printStep">printStep</a></li><li data-type='method'><a href="module-logUtils.html#.printSubHeader">printSubHeader</a></li><li data-type='method'><a href="module-logUtils.html#.printWarning">printWarning</a></li></ul></li><li><a href="module-postKavita.html">postKavita</a><ul class='methods'><li data-type='method'><a href="module-postKavita.html#.checkForNewItems">checkForNewItems</a></li><li data-type='method'><a href="module-postKavita.html#.createUser">createUser</a></li><li data-type='method'><a href="module-postKavita.html#.getSeriesByLibrary">getSeriesByLibrary</a></li><li data-type='method'><a href="module-postKavita.html#.scanAllLibraries">scanAllLibraries</a></li><li data-type='method'><a href="module-postKavita.html#.scanLibrary">scanLibrary</a></li><li data-type='method'><a href="module-postKavita.html#.scanSingleLibrary">scanSingleLibrary</a></li><li data-type='method'><a href="module-postKavita.html#.sendNewItemNotifications">sendNewItemNotifications</a></li><li data-type='method'><a href="module-postKavita.html#.updateUserRoles">updateUserRoles</a></li></ul></li><li><a href="module-roleManager.html">roleManager</a><ul class='methods'><li data-type='method'><a href="module-roleManager.html#.hasRequiredRole">hasRequiredRole</a></li></ul></li><li><a href="module-vault_initVault.html">vault/initVault</a><ul class='methods'><li data-type='method'><a href="module-vault_initVault.html#~getAuthHeaders">getAuthHeaders</a></li><li data-type='method'><a href="module-vault_initVault.html#~getNotifiedIds">getNotifiedIds</a></li><li data-type='method'><a href="module-vault_initVault.html#~getPublicKey">getPublicKey</a></li><li data-type='method'><a href="module-vault_initVault.html#~saveNotifiedIds">saveNotifiedIds</a></li><li data-type='method'><a href="module-vault_initVault.html#~waitForVaultReady">waitForVaultReady</a></li></ul></li></ul><h3>Global</h3><ul><li><a href="global.html#fetchPublicKeyFromVault">fetchPublicKeyFromVault</a></li><li><a href="global.html#getAuthMode">getAuthMode</a></li><li><a href="global.html#getPublicKeyFromMemory">getPublicKeyFromMemory</a></li><li><a href="global.html#initAuth">initAuth</a></li><li><a href="global.html#loadNotifiedIds">loadNotifiedIds</a></li><li><a href="global.html#postVault">postVault</a></li><li><a href="global.html#printBootSummary">printBootSummary</a></li><li><a href="global.html#runCheck">runCheck</a></li><li><a href="global.html#setupLibraryNotifications">setupLibraryNotifications</a></li><li><a href="global.html#validateEnv">validateEnv</a></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">discord/commands/scan.mjs</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * @fileoverview
+ * Scan Command — Displays library list and scans selected libraries.
+ *
+ * Supports buttons for:
+ * - Library selection
+ * - Series browsing
+ * - Paginated navigation
+ * - Returning to library list
+ *
+ * @module commands/scan
+ */
+
+import {
+    SlashCommandBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    EmbedBuilder
+} from 'discord.js';
+import kavita from '../../kavita/initKavita.mjs';
+import { scanLibrary } from '../../kavita/postKavita.mjs';
+import { printDebug, printError } from '../../noona/logger/logUtils.mjs';
+
+const command = {
+    data: new SlashCommandBuilder()
+        .setName('scan')
+        .setDescription('Displays libraries and lets you select one to scan.'),
+
+    /**
+     * Shows the initial library button list.
+     *
+     * @param {import('discord.js').ChatInputCommandInteraction} interaction - The interaction object.
+     * @returns {Promise&lt;void>}
+     */
+    async execute(interaction) {
+        await interaction.deferReply();
+        printDebug(`[Scan] ${interaction.user.tag} requested library list`);
+
+        const libraries = await kavita.getLibraries();
+        if (!libraries?.length) {
+            return interaction.editReply('❌ No libraries found.');
+        }
+
+        const rows = buildLibraryButtons(libraries);
+        await interaction.editReply({
+            content: '📚 Select a library to scan:',
+            components: rows
+        });
+    }
+};
+
+export default command;
+
+/**
+ * 🔘 Builds button rows from a list of libraries.
+ *
+ * @param {Array&lt;{ id: number, name: string }>} libraries - The list of libraries.
+ * @returns {ActionRowBuilder&lt;ButtonBuilder>[]} Array of Discord button rows.
+ */
+function buildLibraryButtons(libraries) {
+    const buttons = libraries.map(lib =>
+        new ButtonBuilder()
+            .setCustomId(`scan_${lib.id}`)
+            .setLabel(lib.name)
+            .setStyle(ButtonStyle.Primary)
+    );
+
+    const rows = [];
+    for (let i = 0; i &lt; buttons.length; i += 5) {
+        rows.push(new ActionRowBuilder().addComponents(buttons.slice(i, i + 5)));
+    }
+
+    return rows;
+}
+
+/**
+ * 🔄 Handles button interaction for library selection and triggers a scan.
+ *
+ * @param {import('discord.js').ButtonInteraction} interaction - The interaction object.
+ * @param {string} libraryId - The selected library ID.
+ * @returns {Promise&lt;void>}
+ */
+export async function handleLibrarySelection(interaction, libraryId) {
+    await interaction.deferUpdate();
+    const libraries = await kavita.getLibraries();
+    const library = libraries.find(lib => lib.id.toString() === libraryId);
+
+    if (!library) {
+        return interaction.editReply({ content: '❌ Library not found.', components: [] });
+    }
+
+    try {
+        await scanLibrary(libraryId);
+        printDebug(`[Scan] Scan initiated for ${library.name} by ${interaction.user.tag}`);
+    } catch (err) {
+        printError(`❌ Failed to scan library: ${err.message}`);
+    }
+
+    await handleSeriesPage(interaction, libraryId, 0, true);
+}
+
+/**
+ * 📖 Shows a paginated list of series in a library.
+ *
+ * @param {import('discord.js').ButtonInteraction} interaction - The interaction object.
+ * @param {string} libraryId - The library ID.
+ * @param {number} [page=0] - The page number.
+ * @param {boolean} [alreadyDeferred=false] - Whether deferUpdate has already been called.
+ * @returns {Promise&lt;void>}
+ */
+export async function handleSeriesPage(interaction, libraryId, page = 0, alreadyDeferred = false) {
+    if (!alreadyDeferred) await interaction.deferUpdate();
+
+    const libraries = await kavita.getLibraries();
+    const library = libraries.find(lib => lib.id.toString() === libraryId);
+    const series = await kavita.getSeriesByLibrary(libraryId);
+
+    if (!library || !series?.length) {
+        return interaction.editReply({
+            content: `📚 Library not found or has no series.`,
+            components: []
+        });
+    }
+
+    const pageSize = 10;
+    const totalPages = Math.ceil(series.length / pageSize);
+    const slice = series.slice(page * pageSize, (page + 1) * pageSize);
+
+    const embed = new EmbedBuilder()
+        .setTitle(`📚 ${library.name} — Series (Page ${page + 1}/${totalPages})`)
+        .setColor(0x0099FF)
+        .setDescription(`Showing ${page * pageSize + 1}-${page * pageSize + slice.length} of ${series.length}`);
+
+    slice.forEach((s, idx) => {
+        embed.addFields({
+            name: `${page * pageSize + idx + 1}. ${s.name}`,
+            value: formatSeriesDetails(s)
+        });
+    });
+
+    const navRow = new ActionRowBuilder();
+    if (page > 0) {
+        navRow.addComponents(
+            new ButtonBuilder()
+                .setCustomId(`series_page_${libraryId}_${page - 1}`)
+                .setLabel('Previous')
+                .setStyle(ButtonStyle.Primary)
+        );
+    }
+
+    navRow.addComponents(
+        new ButtonBuilder()
+            .setCustomId('scan')
+            .setLabel('Back to Libraries')
+            .setStyle(ButtonStyle.Danger)
+    );
+
+    if (page &lt; totalPages - 1) {
+        navRow.addComponents(
+            new ButtonBuilder()
+                .setCustomId(`series_page_${libraryId}_${page + 1}`)
+                .setLabel('Next')
+                .setStyle(ButtonStyle.Primary)
+        );
+    }
+
+    await interaction.editReply({ embeds: [embed], components: [navRow] });
+}
+
+/**
+ * 📄 Formats details of a series object.
+ *
+ * @param {object} series - Series object from Kavita API.
+ * @returns {string} Formatted string.
+ */
+function formatSeriesDetails(series) {
+    const createdDate = series.created ? new Date(series.created).toLocaleDateString() : 'Unknown';
+    const readingTime = series.avgHoursToRead?.toFixed(1) || '?';
+    const format = formatType(series.format);
+
+    return [
+        series.pages ? `📄 ${series.pages} pages` : null,
+        format ? `📚 Format: ${format}` : null,
+        series.avgHoursToRead ? `⏱️ Est. read time: ${readingTime} hrs` : null,
+        `📅 Added: ${createdDate}`
+    ].filter(Boolean).join('\n');
+}
+
+/**
+ * 🔣 Converts Kavita format type into readable string.
+ *
+ * @param {number|string} format - Format code from Kavita.
+ * @returns {string} Readable format string.
+ */
+function formatType(format) {
+    const formats = {
+        0: 'Unknown', 1: 'Image', 2: 'Archive', 3: 'Epub', 4: 'PDF', 5: 'Text'
+    };
+    return formats[format] || 'Unknown';
+}
+
+/**
+ * 📘 Displays full details for a selected series.
+ *
+ * @param {import('discord.js').ButtonInteraction} interaction - Discord button interaction.
+ * @param {string} seriesId - ID of the series.
+ * @returns {Promise&lt;void>}
+ */
+export async function handleSeriesSelection(interaction, seriesId) {
+    await interaction.deferUpdate();
+
+    try {
+        const series = await kavita.fetchData(`/api/Series/${seriesId}`);
+        if (!series) throw new Error('Series not found.');
+
+        const embed = new EmbedBuilder()
+            .setTitle(series.name)
+            .setColor(0x0099FF)
+            .setDescription(series.summary || 'No summary available');
+
+        if (series.coverImage) {
+            embed.setImage(`${process.env.KAVITA_URL}/api/image/${series.coverImage}?apiKey=${process.env.KAVITA_API_KEY}`);
+        }
+
+        const actionRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId(`scan_${series.libraryId}`)
+                .setLabel('Back to Library')
+                .setStyle(ButtonStyle.Secondary)
+        );
+
+        await interaction.editReply({ embeds: [embed], components: [actionRow] });
+    } catch (err) {
+        printError('❌ Error fetching series details:', err);
+        await interaction.editReply({ content: '❌ Error fetching series details.', components: [] });
+    }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.4</a> on Sun Apr 13 2025 10:04:39 GMT-0700 (Pacific Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "source": {
+    "include": [
+      "initmain.mjs",
+      "discord",
+      "kavita",
+      "noona"
+    ],
+    "includePattern": ".+\\.(mjs|js)$",
+    "excludePattern": "(^|\\/|\\\\)_"
+  },
+  "plugins": [],
+  "opts": {
+    "destination": "./docs",
+    "template": "node_modules/docdash",
+    "recurse": true,
+    "verbose": true
+  }
+}

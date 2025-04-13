@@ -1,4 +1,16 @@
-// /initmain.mjs — Noona-Portal Boot Logic (Vault-Resilient, Discord-Aware)
+/**
+ * @fileoverview
+ * Noona-Portal Boot Logic (v1.0.2)
+ *
+ * Starts the Portal service with resilience checks for:
+ * - Vault availability and public key sync
+ * - Kavita API authentication
+ * - Discord bot setup
+ * - Library notification service
+ * - Graceful shutdown handling
+ *
+ * @module initmain
+ */
 
 import { setupDiscord } from './discord/initDiscord.mjs';
 import { setupLibraryNotifications } from './discord/tasks/libraryNotifications.mjs';
@@ -20,7 +32,9 @@ import { validateEnv } from './noona/logger/validateEnv.mjs';
 const SKIP_KEY_CHECK = process.env.SKIP_KEY_CHECK === 'true';
 const VAULT_URL = process.env.VAULT_URL || 'http://localhost:3120';
 
-// 🔍 Validate required environment variables
+// ─────────────────────────────────────────────
+// 🧪 Validate Environment Variables
+// ─────────────────────────────────────────────
 validateEnv(
     [
         'KAVITA_URL',
@@ -49,6 +63,11 @@ let shutdownInProgress = false;
 // ─────────────────────────────────────────────
 // 💥 Graceful Shutdown
 // ─────────────────────────────────────────────
+
+/**
+ * Handles termination signals and cleanly shuts down Discord bot.
+ * @param {string} signal - OS signal string
+ */
 async function gracefulShutdown(signal) {
     if (shutdownInProgress) return;
     shutdownInProgress = true;
@@ -110,18 +129,9 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
         summary.push({ name: 'Auth', info: err.message, ready: false });
     }
 
-
-    // 3. 🗝️ Vault Token Fetch (optional for headers)
-    printStep('🔑 Getting Vault token from Redis...');
-    try {
-        const token = await getVaultToken();
-        if (!token) throw new Error('Token is null');
-        printResult('✅ Vault token retrieved.');
-        summary.push({ name: 'Vault Auth', info: 'Token loaded from Redis', ready: true });
-    } catch (err) {
-        printError(`❌ Vault token failed: ${err.message}`);
-        summary.push({ name: 'Vault Auth', info: err.message, ready: false });
-    }
+    // 3. 🔑 Vault Auth (No longer uses token — now tracked via public key only)
+    printStep('🔑 Skipping Vault token logic (public-key-only system)');
+    summary.push({ name: 'Vault Auth', info: 'Token removed — using publicKey only', ready: false });
 
     // 4. 📚 Kavita Authentication
     printStep('📚 Authenticating with Kavita...');

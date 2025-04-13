@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>noona/logger/printBootSummary.mjs - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-checkKeys.html">checkKeys</a><ul class='methods'><li data-type='method'><a href="module-checkKeys.html#.checkKeyPair">checkKeyPair</a></li></ul></li><li><a href="module-commandManager.html">commandManager</a><ul class='methods'><li data-type='method'><a href="module-commandManager.html#~getCommandCount">getCommandCount</a></li><li data-type='method'><a href="module-commandManager.html#~loadCommands">loadCommands</a></li><li data-type='method'><a href="module-commandManager.html#~registerCommands">registerCommands</a></li></ul></li><li><a href="module-commands_admin.html">commands/admin</a><ul class='methods'><li data-type='method'><a href="module-commands_admin.html#~formatFileSize">formatFileSize</a></li><li data-type='method'><a href="module-commands_admin.html#~formatReadingTime">formatReadingTime</a></li></ul></li><li><a href="module-commands_ding.html">commands/ding</a></li><li><a href="module-commands_join.html">commands/join</a><ul class='methods'><li data-type='method'><a href="module-commands_join.html#~validateEmail">validateEmail</a></li></ul></li><li><a href="module-commands_scan.html">commands/scan</a><ul class='methods'><li data-type='method'><a href="module-commands_scan.html#.handleLibrarySelection">handleLibrarySelection</a></li><li data-type='method'><a href="module-commands_scan.html#.handleSeriesPage">handleSeriesPage</a></li><li data-type='method'><a href="module-commands_scan.html#.handleSeriesSelection">handleSeriesSelection</a></li><li data-type='method'><a href="module-commands_scan.html#~buildLibraryButtons">buildLibraryButtons</a></li><li data-type='method'><a href="module-commands_scan.html#~formatSeriesDetails">formatSeriesDetails</a></li><li data-type='method'><a href="module-commands_scan.html#~formatType">formatType</a></li></ul></li><li><a href="module-commands_search.html">commands/search</a></li><li><a href="module-initDiscord.html">initDiscord</a><ul class='methods'><li data-type='method'><a href="module-initDiscord.html#~setupDiscord">setupDiscord</a></li></ul></li><li><a href="module-initKavita.html">initKavita</a></li><li><a href="module-initmain.html">initmain</a><ul class='methods'><li data-type='method'><a href="module-initmain.html#~gracefulShutdown">gracefulShutdown</a></li></ul></li><li><a href="module-logUtils.html">logUtils</a><ul class='methods'><li data-type='method'><a href="module-logUtils.html#.printAction">printAction</a></li><li data-type='method'><a href="module-logUtils.html#.printBanner">printBanner</a></li><li data-type='method'><a href="module-logUtils.html#.printDebug">printDebug</a></li><li data-type='method'><a href="module-logUtils.html#.printDivider">printDivider</a></li><li data-type='method'><a href="module-logUtils.html#.printDownloadSummary">printDownloadSummary</a></li><li data-type='method'><a href="module-logUtils.html#.printError">printError</a></li><li data-type='method'><a href="module-logUtils.html#.printHeader">printHeader</a></li><li data-type='method'><a href="module-logUtils.html#.printNote">printNote</a></li><li data-type='method'><a href="module-logUtils.html#.printProgressBar">printProgressBar</a></li><li data-type='method'><a href="module-logUtils.html#.printResult">printResult</a></li><li data-type='method'><a href="module-logUtils.html#.printSection">printSection</a></li><li data-type='method'><a href="module-logUtils.html#.printSpacer">printSpacer</a></li><li data-type='method'><a href="module-logUtils.html#.printStep">printStep</a></li><li data-type='method'><a href="module-logUtils.html#.printSubHeader">printSubHeader</a></li><li data-type='method'><a href="module-logUtils.html#.printWarning">printWarning</a></li></ul></li><li><a href="module-postKavita.html">postKavita</a><ul class='methods'><li data-type='method'><a href="module-postKavita.html#.checkForNewItems">checkForNewItems</a></li><li data-type='method'><a href="module-postKavita.html#.createUser">createUser</a></li><li data-type='method'><a href="module-postKavita.html#.getSeriesByLibrary">getSeriesByLibrary</a></li><li data-type='method'><a href="module-postKavita.html#.scanAllLibraries">scanAllLibraries</a></li><li data-type='method'><a href="module-postKavita.html#.scanLibrary">scanLibrary</a></li><li data-type='method'><a href="module-postKavita.html#.scanSingleLibrary">scanSingleLibrary</a></li><li data-type='method'><a href="module-postKavita.html#.sendNewItemNotifications">sendNewItemNotifications</a></li><li data-type='method'><a href="module-postKavita.html#.updateUserRoles">updateUserRoles</a></li></ul></li><li><a href="module-roleManager.html">roleManager</a><ul class='methods'><li data-type='method'><a href="module-roleManager.html#.hasRequiredRole">hasRequiredRole</a></li></ul></li><li><a href="module-vault_initVault.html">vault/initVault</a><ul class='methods'><li data-type='method'><a href="module-vault_initVault.html#~getAuthHeaders">getAuthHeaders</a></li><li data-type='method'><a href="module-vault_initVault.html#~getNotifiedIds">getNotifiedIds</a></li><li data-type='method'><a href="module-vault_initVault.html#~getPublicKey">getPublicKey</a></li><li data-type='method'><a href="module-vault_initVault.html#~saveNotifiedIds">saveNotifiedIds</a></li><li data-type='method'><a href="module-vault_initVault.html#~waitForVaultReady">waitForVaultReady</a></li></ul></li></ul><h3>Global</h3><ul><li><a href="global.html#fetchPublicKeyFromVault">fetchPublicKeyFromVault</a></li><li><a href="global.html#getAuthMode">getAuthMode</a></li><li><a href="global.html#getPublicKeyFromMemory">getPublicKeyFromMemory</a></li><li><a href="global.html#initAuth">initAuth</a></li><li><a href="global.html#loadNotifiedIds">loadNotifiedIds</a></li><li><a href="global.html#postVault">postVault</a></li><li><a href="global.html#printBootSummary">printBootSummary</a></li><li><a href="global.html#runCheck">runCheck</a></li><li><a href="global.html#setupLibraryNotifications">setupLibraryNotifications</a></li><li><a href="global.html#validateEnv">validateEnv</a></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">noona/logger/printBootSummary.mjs</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// ✅ /noona/logger/printBootSummary.mjs
+
+import chalk from 'chalk';
+import { table } from 'table';
+
+/**
+ * @typedef {Object} BootComponentStatus
+ * @property {string} name - Name of the component.
+ * @property {string} info - Informational message about the component.
+ * @property {'ready' | 'fail' | 'warn' | 'unknown'} status - Component status enum.
+ */
+
+/**
+ * Prints a themed boot summary styled for Noona services.
+ *
+ * Accepts an array of components with status states. Supported status values:
+ * - 'ready'   → 🟢 Ready
+ * - 'fail'    → 🔴 Failed
+ * - 'warn'    → 🟡 PublicKey Mode
+ * - 'unknown' → 🟣 Unknown
+ *
+ * @param {BootComponentStatus[]} results - Array of boot status components.
+ */
+export function printBootSummary(results) {
+    console.log('');
+    console.log(chalk.cyan('[Noona-Portal] 🧩 Boot Summary\n'));
+
+    const rows = [
+        ['Component', 'Info', 'Status'],
+        ...results.map(({ name, info, status }) => {
+            let icon;
+            switch (status) {
+                case 'ready':
+                    icon = chalk.green('🟢 Ready');
+                    break;
+                case 'fail':
+                    icon = chalk.red('🔴 Failed');
+                    break;
+                case 'warn':
+                    icon = chalk.yellow('🟡 PublicKey Mode');
+                    break;
+                case 'unknown':
+                default:
+                    icon = chalk.magenta('🟣 Unknown');
+                    break;
+            }
+
+            return [name, info, icon];
+        })
+    ];
+
+    const config = {
+        border: {
+            topBody: '─',
+            topJoin: '┬',
+            topLeft: '┌',
+            topRight: '┐',
+            bottomBody: '─',
+            bottomJoin: '┴',
+            bottomLeft: '└',
+            bottomRight: '┘',
+            bodyLeft: '│',
+            bodyRight: '│',
+            bodyJoin: '│',
+            joinBody: '─',
+            joinLeft: '├',
+            joinRight: '┤',
+            joinJoin: '┼'
+        },
+        columns: {
+            0: { width: 26 },
+            1: { width: 66 },
+            2: { width: 20 }
+        }
+    };
+
+    console.log(table(rows, config));
+
+    const failures = results.filter(r => r.status === 'fail');
+    const warnings = results.filter(r => r.status === 'warn');
+    const unknowns = results.filter(r => r.status === 'unknown');
+
+    if (failures.length === 0 &amp;&amp; warnings.length === 0 &amp;&amp; unknowns.length === 0) {
+        console.log(chalk.green(`🧠  Noona-Portal is online. All systems go.`));
+    } else {
+        const failMsg = failures.length ? `• ${failures.length} failed` : '';
+        const warnMsg = warnings.length ? `• ${warnings.length} in publicKey mode` : '';
+        const unkMsg = unknowns.length ? `• ${unknowns.length} unknown` : '';
+        console.log(chalk.yellow(`⚠️  Boot completed with issues:\n   ${[failMsg, warnMsg, unkMsg].filter(Boolean).join('\n   ')}`));
+    }
+
+    console.log('');
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.4</a> on Sun Apr 13 2025 10:04:39 GMT-0700 (Pacific Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>

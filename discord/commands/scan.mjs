@@ -1,4 +1,15 @@
-// /discord/commands/scan.mjs — Library Scanner + Series Browser
+/**
+ * @fileoverview
+ * Scan Command — Displays library list and scans selected libraries.
+ *
+ * Supports buttons for:
+ * - Library selection
+ * - Series browsing
+ * - Paginated navigation
+ * - Returning to library list
+ *
+ * @module commands/scan
+ */
 
 import {
     SlashCommandBuilder,
@@ -16,6 +27,12 @@ const command = {
         .setName('scan')
         .setDescription('Displays libraries and lets you select one to scan.'),
 
+    /**
+     * Shows the initial library button list.
+     *
+     * @param {import('discord.js').ChatInputCommandInteraction} interaction - The interaction object.
+     * @returns {Promise<void>}
+     */
     async execute(interaction) {
         await interaction.deferReply();
         printDebug(`[Scan] ${interaction.user.tag} requested library list`);
@@ -36,7 +53,10 @@ const command = {
 export default command;
 
 /**
- * 🔘 Build Discord button components from library list
+ * 🔘 Builds button rows from a list of libraries.
+ *
+ * @param {Array<{ id: number, name: string }>} libraries - The list of libraries.
+ * @returns {ActionRowBuilder<ButtonBuilder>[]} Array of Discord button rows.
  */
 function buildLibraryButtons(libraries) {
     const buttons = libraries.map(lib =>
@@ -55,7 +75,11 @@ function buildLibraryButtons(libraries) {
 }
 
 /**
- * 🔄 Handle button click → scan library
+ * 🔄 Handles button interaction for library selection and triggers a scan.
+ *
+ * @param {import('discord.js').ButtonInteraction} interaction - The interaction object.
+ * @param {string} libraryId - The selected library ID.
+ * @returns {Promise<void>}
  */
 export async function handleLibrarySelection(interaction, libraryId) {
     await interaction.deferUpdate();
@@ -77,7 +101,13 @@ export async function handleLibrarySelection(interaction, libraryId) {
 }
 
 /**
- * 📖 Show paginated list of series in library
+ * 📖 Shows a paginated list of series in a library.
+ *
+ * @param {import('discord.js').ButtonInteraction} interaction - The interaction object.
+ * @param {string} libraryId - The library ID.
+ * @param {number} [page=0] - The page number.
+ * @param {boolean} [alreadyDeferred=false] - Whether deferUpdate has already been called.
+ * @returns {Promise<void>}
  */
 export async function handleSeriesPage(interaction, libraryId, page = 0, alreadyDeferred = false) {
     if (!alreadyDeferred) await interaction.deferUpdate();
@@ -139,7 +169,10 @@ export async function handleSeriesPage(interaction, libraryId, page = 0, already
 }
 
 /**
- * 📄 Format details for series
+ * 📄 Formats details of a series object.
+ *
+ * @param {object} series - Series object from Kavita API.
+ * @returns {string} Formatted string.
  */
 function formatSeriesDetails(series) {
     const createdDate = series.created ? new Date(series.created).toLocaleDateString() : 'Unknown';
@@ -155,7 +188,10 @@ function formatSeriesDetails(series) {
 }
 
 /**
- * 🔣 Format type from Kavita ID
+ * 🔣 Converts Kavita format type into readable string.
+ *
+ * @param {number|string} format - Format code from Kavita.
+ * @returns {string} Readable format string.
  */
 function formatType(format) {
     const formats = {
@@ -165,7 +201,11 @@ function formatType(format) {
 }
 
 /**
- * 📘 View full series details
+ * 📘 Displays full details for a selected series.
+ *
+ * @param {import('discord.js').ButtonInteraction} interaction - Discord button interaction.
+ * @param {string} seriesId - ID of the series.
+ * @returns {Promise<void>}
  */
 export async function handleSeriesSelection(interaction, seriesId) {
     await interaction.deferUpdate();

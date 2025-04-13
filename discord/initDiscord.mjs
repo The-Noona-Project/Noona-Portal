@@ -1,4 +1,12 @@
-// /discord/initDiscord.mjs — Warden-Ready Discord Setup (With Intent Notes)
+/**
+ * @fileoverview
+ * Initializes the Noona-Portal Discord bot client.
+ *
+ * Loads and registers all slash commands, attaches interaction handlers,
+ * and enforces role-based command access using `roleManager`.
+ *
+ * @module initDiscord
+ */
 
 import { Client, GatewayIntentBits, Events } from 'discord.js';
 import { loadCommands, registerCommands } from './commandManager.mjs';
@@ -17,13 +25,24 @@ import {
     printSection
 } from '../noona/logger/logUtils.mjs';
 
+/**
+ * Discord client instance shared across commands.
+ * @type {import('discord.js').Client}
+ */
 const client = new Client({
     intents: [GatewayIntentBits.Guilds]
 });
 
 /**
- * Initializes the Discord bot, loads slash commands, and attaches interaction handlers.
- * @returns {Promise<{ client: Client, commandCount: number }>}
+ * Bootstraps the Discord bot and all slash command interactions.
+ *
+ * - Loads commands
+ * - Registers them with Discord
+ * - Attaches interaction listeners
+ *
+ * @async
+ * @function setupDiscord
+ * @returns {Promise<{ client: import('discord.js').Client, commandCount: number }>}
  */
 export async function setupDiscord() {
     printSection('🤖 Discord Bot Setup');
@@ -37,23 +56,24 @@ export async function setupDiscord() {
                 return reject(new Error('No valid commands loaded.'));
             }
 
+            // Bind commands to client
             client.commands = commandCollection;
             printResult(`✅ Commands loaded: [ ${commandNames.join(', ')} ]`);
 
+            // 🔗 On bot ready
             client.once(Events.ClientReady, async () => {
                 printResult(`✅ Bot logged in as ${client.user.tag}`);
-
                 printStep('📡 Registering commands with Discord API...');
                 const count = await registerCommands(commandJSON);
                 printResult(`✅ Registered ${count} slash commands`);
-
                 printDivider();
                 resolve({ client, commandCount: count });
             });
 
+            // 📥 On interaction create
             client.on(Events.InteractionCreate, async interaction => {
                 try {
-                    // 🧠 Slash Commands
+                    // 💬 Slash command
                     if (interaction.isChatInputCommand()) {
                         const command = client.commands.get(interaction.commandName);
                         if (!command) return;
@@ -64,7 +84,7 @@ export async function setupDiscord() {
                         await command.execute(interaction);
                     }
 
-                    // 🔄 Autocomplete Support
+                    // 🧠 Autocomplete
                     else if (interaction.isAutocomplete()) {
                         const command = client.commands.get(interaction.commandName);
                         if (command?.autocomplete) {
@@ -72,7 +92,7 @@ export async function setupDiscord() {
                         }
                     }
 
-                    // 🔘 Button Handlers (for scan UI)
+                    // 🔘 Button interactions (used in scan)
                     else if (interaction.isButton()) {
                         const [prefix, ...args] = interaction.customId.split('_');
                         const scan = client.commands.get('scan');
@@ -93,22 +113,26 @@ export async function setupDiscord() {
                     }
                 } catch (err) {
                     printError(`❌ Interaction error: ${err.message}`);
-
                     if (interaction.isRepliable()) {
-                        if (!interaction.replied && !interaction.deferred) {
-                            await interaction.reply({
-                                content: '❌ An error occurred while executing that action.',
-                                ephemeral: true
-                            });
-                        } else {
-                            await interaction.editReply({
-                                content: '❌ Something went wrong.'
-                            });
+                        try {
+                            if (!interaction.replied && !interaction.deferred) {
+                                await interaction.reply({
+                                    content: '❌ An error occurred while executing that action.',
+                                    ephemeral: true
+                                });
+                            } else {
+                                await interaction.editReply({
+                                    content: '❌ Something went wrong.'
+                                });
+                            }
+                        } catch (e) {
+                            printError(`❌ Failed to reply to interaction: ${e.message}`);
                         }
                     }
                 }
             });
 
+            // 🔐 Login with bot token
             printStep('🔐 Logging in with bot token...');
             await client.login(process.env.DISCORD_TOKEN);
         } catch (err) {

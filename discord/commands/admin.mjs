@@ -1,4 +1,17 @@
-// /discord/commands/admin.mjs — Admin Tools for Kavita
+/**
+ * @fileoverview
+ * Admin Command for Kavita Server Management
+ *
+ * Provides subcommands for:
+ * - Assigning user roles by email
+ * - Viewing server stats
+ * - Running maintenance tasks (scans, cleanup, cache, backup)
+ *
+ * @module commands/admin
+ */
+
+/** @typedef {import('discord.js').ChatInputCommandInteraction} ChatInputCommandInteraction */
+/** @typedef {import('discord.js').AutocompleteInteraction} AutocompleteInteraction */
 
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import kavita from '../../kavita/initKavita.mjs';
@@ -14,57 +27,49 @@ const command = {
         .setName('admin')
         .setDescription('Administrator commands for Kavita')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName('role')
+        .addSubcommand(sub =>
+            sub.setName('role')
                 .setDescription('Manage user roles')
-                .addStringOption(option =>
-                    option.setName('email')
-                        .setDescription('User email')
-                        .setRequired(true)
+                .addStringOption(opt =>
+                    opt.setName('email').setDescription('User email').setRequired(true)
                 )
-                .addStringOption(option =>
-                    option.setName('role')
-                        .setDescription('Role to assign')
-                        .setRequired(true)
-                        .addChoices(
-                            { name: 'Admin', value: 'admin' },
-                            { name: 'User', value: 'user' }
-                        )
+                .addStringOption(opt =>
+                    opt.setName('role').setDescription('Role to assign').setRequired(true).addChoices(
+                        { name: 'Admin', value: 'admin' },
+                        { name: 'User', value: 'user' }
+                    )
                 )
         )
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName('server-status')
+        .addSubcommand(sub =>
+            sub.setName('server-status')
                 .setDescription('Get Kavita server statistics')
         )
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName('server-maintenance')
+        .addSubcommand(sub =>
+            sub.setName('server-maintenance')
                 .setDescription('Perform server maintenance tasks')
-                .addStringOption(option =>
-                    option.setName('task')
-                        .setDescription('Maintenance task to perform')
-                        .setRequired(true)
-                        .addChoices(
-                            { name: 'Clear Cache', value: 'clear-cache' },
-                            { name: 'Cleanup', value: 'cleanup' },
-                            { name: 'Database Backup', value: 'backup-db' },
-                            { name: 'Scan All Libraries', value: 'scan-libraries' },
-                            { name: 'Scan Single Library', value: 'scan-library' }
-                        )
+                .addStringOption(opt =>
+                    opt.setName('task').setDescription('Maintenance task to perform').setRequired(true).addChoices(
+                        { name: 'Clear Cache', value: 'clear-cache' },
+                        { name: 'Cleanup', value: 'cleanup' },
+                        { name: 'Database Backup', value: 'backup-db' },
+                        { name: 'Scan All Libraries', value: 'scan-libraries' },
+                        { name: 'Scan Single Library', value: 'scan-library' }
+                    )
                 )
-                .addStringOption(option =>
-                    option.setName('library')
-                        .setDescription('Library name or ID (for single scan)')
-                        .setAutocomplete(true)
+                .addStringOption(opt =>
+                    opt.setName('library').setDescription('Library name or ID (for single scan)').setAutocomplete(true)
                 )
-                .addBooleanOption(option =>
-                    option.setName('force')
-                        .setDescription('Force full scan (single library only)')
+                .addBooleanOption(opt =>
+                    opt.setName('force').setDescription('Force full scan (single library only)')
                 )
         ),
 
+    /**
+     * Executes the admin slash command.
+     *
+     * @param {ChatInputCommandInteraction} interaction - The interaction context of the command
+     * @returns {Promise<void>}
+     */
     async execute(interaction) {
         await interaction.deferReply({ ephemeral: true });
         const subcommand = interaction.options.getSubcommand();
@@ -79,11 +84,9 @@ const command = {
             }
 
             const result = await updateUserRoles(userId, [role]);
-            if (result) {
-                return interaction.editReply(`✅ Updated role to **${role}** for **${email}**`);
-            } else {
-                return interaction.editReply(`❌ Failed to update role for **${email}**`);
-            }
+            return interaction.editReply(result
+                ? `✅ Updated role to **${role}** for **${email}**`
+                : `❌ Failed to update role for **${email}**`);
         }
 
         if (subcommand === 'server-status') {
@@ -109,25 +112,15 @@ const command = {
                 ];
 
                 fields.forEach(([name, value]) => {
-                    if (value !== undefined) {
-                        embed.addFields({ name, value: value.toString(), inline: true });
-                    }
+                    if (value !== undefined) embed.addFields({ name, value: value.toString(), inline: true });
                 });
 
                 if (stats.mostReadSeries?.[0]?.value?.name) {
-                    embed.addFields({
-                        name: '📖 Most Read Series',
-                        value: stats.mostReadSeries[0].value.name,
-                        inline: false
-                    });
+                    embed.addFields({ name: '📖 Most Read Series', value: stats.mostReadSeries[0].value.name });
                 }
 
                 if (stats.mostActiveLibraries?.[0]?.value?.name) {
-                    embed.addFields({
-                        name: '🏛️ Most Active Library',
-                        value: stats.mostActiveLibraries[0].value.name,
-                        inline: false
-                    });
+                    embed.addFields({ name: '🏛️ Most Active Library', value: stats.mostActiveLibraries[0].value.name });
                 }
 
                 return interaction.editReply({ embeds: [embed] });
@@ -191,6 +184,12 @@ const command = {
         }
     },
 
+    /**
+     * Handles autocomplete for the library name input.
+     *
+     * @param {AutocompleteInteraction} interaction - The autocomplete interaction context
+     * @returns {Promise<void>}
+     */
     async autocomplete(interaction) {
         const subcommand = interaction.options.getSubcommand();
         const focused = interaction.options.getFocused(true);
@@ -222,9 +221,11 @@ const command = {
 
 export default command;
 
-// ———————————————————————————————————————————————————————————————————
-// Helpers
-
+/**
+ * Converts bytes to a human-readable size string.
+ * @param {number} bytes
+ * @returns {string}
+ */
 function formatFileSize(bytes) {
     if (!bytes) return '0 Bytes';
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
@@ -232,6 +233,11 @@ function formatFileSize(bytes) {
     return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
 }
 
+/**
+ * Converts minutes to h:m string.
+ * @param {number} minutes
+ * @returns {string}
+ */
 function formatReadingTime(minutes) {
     if (!minutes) return '0 min';
     const hrs = Math.floor(minutes / 60);

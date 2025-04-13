@@ -1,4 +1,12 @@
-// ✅ /discord/commandManager.mjs — Slash Command Loader + Registrar
+/**
+ * @fileoverview
+ * Slash Command Manager for Noona-Portal
+ *
+ * Loads, validates, and registers all Discord slash commands from `/commands`.
+ * Provides an in-memory collection for bot runtime access and supports full registration via Discord API.
+ *
+ * @module commandManager
+ */
 
 import { SlashCommandBuilder, REST, Routes, Collection } from 'discord.js';
 import fs from 'fs';
@@ -11,8 +19,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 /**
- * Loads all slash commands from the /commands directory.
- * @returns {Promise<{ commandJSON: Array, commandCollection: Collection, commandNames: string[] }>}
+ * Dynamically loads all slash commands from the `/commands` directory.
+ *
+ * @async
+ * @function loadCommands
+ * @returns {Promise<{ commandJSON: object[], commandCollection: Collection, commandNames: string[] }>}
  */
 export async function loadCommands() {
     printStep('📦 Loading commands...');
@@ -52,9 +63,12 @@ export async function loadCommands() {
 }
 
 /**
- * Registers slash commands with the Discord API.
- * @param {Array} commandJSON - Array of slash command JSON payloads.
- * @returns {Promise<number>} Number of commands registered
+ * Registers slash commands with the Discord API globally.
+ *
+ * @async
+ * @function registerCommands
+ * @param {object[]} commandJSON - Array of command JSON payloads.
+ * @returns {Promise<number>} Number of registered commands
  */
 export async function registerCommands(commandJSON) {
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -73,7 +87,9 @@ export async function registerCommands(commandJSON) {
 }
 
 /**
- * Returns the number of loaded commands.
+ * Returns the number of currently loaded commands.
+ *
+ * @function getCommandCount
  * @returns {number}
  */
 export function getCommandCount() {

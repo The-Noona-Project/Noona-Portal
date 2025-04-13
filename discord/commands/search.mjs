@@ -1,12 +1,16 @@
-// /discord/commands/search.mjs — Kavita Series Search
+/**
+ * @fileoverview
+ * Search Command — `/search`
+ *
+ * Searches for manga/comics in Kavita and returns an embed with the top results.
+ *
+ * @module commands/search
+ */
 
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import kavita from '../../kavita/initKavita.mjs';
 import { printDebug, printError } from '../../noona/logger/logUtils.mjs';
 
-/**
- * Slash command for searching manga/comics in Kavita.
- */
 const command = {
     data: new SlashCommandBuilder()
         .setName('search')
@@ -18,11 +22,14 @@ const command = {
         ),
 
     /**
-     * Executes the search command.
-     * @param {import('discord.js').ChatInputCommandInteraction} interaction
+     * Executes the /search command.
+     *
+     * @param {import('discord.js').ChatInputCommandInteraction} interaction - The Discord interaction object.
+     * @returns {Promise<void>}
      */
     async execute(interaction) {
         await interaction.deferReply();
+
         const searchTerm = interaction.options.getString('title');
         printDebug(`[Search] ${interaction.user.tag} searching for "${searchTerm}"`);
 
@@ -36,7 +43,8 @@ const command = {
             const embed = new EmbedBuilder()
                 .setTitle(`🔍 Results for "${searchTerm}"`)
                 .setColor(0x0099FF)
-                .setDescription(`Showing top ${Math.min(10, results.series.length)} result(s):`);
+                .setDescription(`Showing top ${Math.min(10, results.series.length)} result(s):`)
+                .setTimestamp();
 
             results.series.slice(0, 10).forEach((series, index) => {
                 const title = series.name || 'Unknown Title';
@@ -45,7 +53,7 @@ const command = {
 
                 embed.addFields({
                     name: `${index + 1}. ${title} (ID: ${id})`,
-                    value: `Library: ${library}`
+                    value: `📚 Library: ${library}`
                 });
             });
 

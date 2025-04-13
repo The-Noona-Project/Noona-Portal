@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>initKavita - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-checkKeys.html">checkKeys</a><ul class='methods'><li data-type='method'><a href="module-checkKeys.html#.checkKeyPair">checkKeyPair</a></li></ul></li><li><a href="module-commandManager.html">commandManager</a><ul class='methods'><li data-type='method'><a href="module-commandManager.html#~getCommandCount">getCommandCount</a></li><li data-type='method'><a href="module-commandManager.html#~loadCommands">loadCommands</a></li><li data-type='method'><a href="module-commandManager.html#~registerCommands">registerCommands</a></li></ul></li><li><a href="module-commands_admin.html">commands/admin</a><ul class='methods'><li data-type='method'><a href="module-commands_admin.html#~formatFileSize">formatFileSize</a></li><li data-type='method'><a href="module-commands_admin.html#~formatReadingTime">formatReadingTime</a></li></ul></li><li><a href="module-commands_ding.html">commands/ding</a></li><li><a href="module-commands_join.html">commands/join</a><ul class='methods'><li data-type='method'><a href="module-commands_join.html#~validateEmail">validateEmail</a></li></ul></li><li><a href="module-commands_scan.html">commands/scan</a><ul class='methods'><li data-type='method'><a href="module-commands_scan.html#.handleLibrarySelection">handleLibrarySelection</a></li><li data-type='method'><a href="module-commands_scan.html#.handleSeriesPage">handleSeriesPage</a></li><li data-type='method'><a href="module-commands_scan.html#.handleSeriesSelection">handleSeriesSelection</a></li><li data-type='method'><a href="module-commands_scan.html#~buildLibraryButtons">buildLibraryButtons</a></li><li data-type='method'><a href="module-commands_scan.html#~formatSeriesDetails">formatSeriesDetails</a></li><li data-type='method'><a href="module-commands_scan.html#~formatType">formatType</a></li></ul></li><li><a href="module-commands_search.html">commands/search</a></li><li><a href="module-initDiscord.html">initDiscord</a><ul class='methods'><li data-type='method'><a href="module-initDiscord.html#~setupDiscord">setupDiscord</a></li></ul></li><li><a href="module-initKavita.html">initKavita</a></li><li><a href="module-initmain.html">initmain</a><ul class='methods'><li data-type='method'><a href="module-initmain.html#~gracefulShutdown">gracefulShutdown</a></li></ul></li><li><a href="module-logUtils.html">logUtils</a><ul class='methods'><li data-type='method'><a href="module-logUtils.html#.printAction">printAction</a></li><li data-type='method'><a href="module-logUtils.html#.printBanner">printBanner</a></li><li data-type='method'><a href="module-logUtils.html#.printDebug">printDebug</a></li><li data-type='method'><a href="module-logUtils.html#.printDivider">printDivider</a></li><li data-type='method'><a href="module-logUtils.html#.printDownloadSummary">printDownloadSummary</a></li><li data-type='method'><a href="module-logUtils.html#.printError">printError</a></li><li data-type='method'><a href="module-logUtils.html#.printHeader">printHeader</a></li><li data-type='method'><a href="module-logUtils.html#.printNote">printNote</a></li><li data-type='method'><a href="module-logUtils.html#.printProgressBar">printProgressBar</a></li><li data-type='method'><a href="module-logUtils.html#.printResult">printResult</a></li><li data-type='method'><a href="module-logUtils.html#.printSection">printSection</a></li><li data-type='method'><a href="module-logUtils.html#.printSpacer">printSpacer</a></li><li data-type='method'><a href="module-logUtils.html#.printStep">printStep</a></li><li data-type='method'><a href="module-logUtils.html#.printSubHeader">printSubHeader</a></li><li data-type='method'><a href="module-logUtils.html#.printWarning">printWarning</a></li></ul></li><li><a href="module-postKavita.html">postKavita</a><ul class='methods'><li data-type='method'><a href="module-postKavita.html#.checkForNewItems">checkForNewItems</a></li><li data-type='method'><a href="module-postKavita.html#.createUser">createUser</a></li><li data-type='method'><a href="module-postKavita.html#.getSeriesByLibrary">getSeriesByLibrary</a></li><li data-type='method'><a href="module-postKavita.html#.scanAllLibraries">scanAllLibraries</a></li><li data-type='method'><a href="module-postKavita.html#.scanLibrary">scanLibrary</a></li><li data-type='method'><a href="module-postKavita.html#.scanSingleLibrary">scanSingleLibrary</a></li><li data-type='method'><a href="module-postKavita.html#.sendNewItemNotifications">sendNewItemNotifications</a></li><li data-type='method'><a href="module-postKavita.html#.updateUserRoles">updateUserRoles</a></li></ul></li><li><a href="module-roleManager.html">roleManager</a><ul class='methods'><li data-type='method'><a href="module-roleManager.html#.hasRequiredRole">hasRequiredRole</a></li></ul></li><li><a href="module-vault_initVault.html">vault/initVault</a><ul class='methods'><li data-type='method'><a href="module-vault_initVault.html#~getAuthHeaders">getAuthHeaders</a></li><li data-type='method'><a href="module-vault_initVault.html#~getNotifiedIds">getNotifiedIds</a></li><li data-type='method'><a href="module-vault_initVault.html#~getPublicKey">getPublicKey</a></li><li data-type='method'><a href="module-vault_initVault.html#~saveNotifiedIds">saveNotifiedIds</a></li><li data-type='method'><a href="module-vault_initVault.html#~waitForVaultReady">waitForVaultReady</a></li></ul></li></ul><h3>Global</h3><ul><li><a href="global.html#fetchPublicKeyFromVault">fetchPublicKeyFromVault</a></li><li><a href="global.html#getAuthMode">getAuthMode</a></li><li><a href="global.html#getPublicKeyFromMemory">getPublicKeyFromMemory</a></li><li><a href="global.html#initAuth">initAuth</a></li><li><a href="global.html#loadNotifiedIds">loadNotifiedIds</a></li><li><a href="global.html#postVault">postVault</a></li><li><a href="global.html#printBootSummary">printBootSummary</a></li><li><a href="global.html#runCheck">runCheck</a></li><li><a href="global.html#setupLibraryNotifications">setupLibraryNotifications</a></li><li><a href="global.html#validateEnv">validateEnv</a></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">initKavita</h1>
+    
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        
+            
+        
+    
+</header>
+
+<article>
+    
+        <div class="container-overview">
+        
+            
+                <div class="description usertext">Kavita API Handler for Noona-Portal (Initialization & Read Operations)Handles authentication, library search, recently added content, and user info lookup.This module provides a singleton Kavita API instance and wraps safe calls with auto-auth fallback.</div>
+            
+
+            
+                
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li>Kavita API Handler for Noona-Portal (Initialization & Read Operations)Handles authentication, library search, recently added content, and user info lookup.This module provides a singleton Kavita API instance and wraps safe calls with auto-auth fallback.</li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="kavita_initKavita.mjs.html">kavita/initKavita.mjs</a>, <a href="kavita_initKavita.mjs.html#line1">line 1</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+        
+        </div>
+    
+
+    
+
+    
+
+    
+    
+    
+
+     
+
+    
+
+    
+
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.4</a> on Sun Apr 13 2025 10:04:39 GMT-0700 (Pacific Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>

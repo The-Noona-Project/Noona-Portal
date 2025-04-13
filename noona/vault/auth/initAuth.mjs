@@ -1,39 +1,67 @@
-// /noona/vault/initAuth.mjs — JWT Key Loader & Verifier (Runtime Ready)
-import { printStep, printResult, printError } from '../../logger/logUtils.mjs';
-import { checkKeyPair } from './checkKeys.mjs';
-import { fetchPublicKeyFromVault } from './getPublicKey.mjs';
+// ✅ /noona/vault/auth/initAuth.mjs — Public-Key Auth Logic for Noona-Portal
 
-let publicKeyInMemory = null;
+import axios from 'axios';
+import { printStep, printDebug, printResult, printError } from '../../logger/logUtils.mjs';
 
+const VAULT_URL = process.env.VAULT_URL || 'http://noona-vault:3120';
+const SERVICE_NAME = process.env.SERVICE_NAME || 'noona-portal';
+
+let cachedPublicKey = null;
+let authMode = 'unknown'; // 'public' | 'token' | 'fail'
+
+/**
+ * Initializes the public key auth flow by requesting a new key from Vault.
+ * Result is cached in memory.
+ *
+ * @returns {Promise<boolean>} True if key fetched and verified, false otherwise.
+ */
 export async function initAuth() {
     printStep('[Auth] Initializing authentication module...');
 
-    const privateKey = process.env.JWT_PRIVATE_KEY;
-    if (!privateKey) {
-        printError('[Auth] ❌ Private key not found in environment');
-        return false;
-    }
+    const url = `${VAULT_URL}/v2/redis/publicKey/create`;
 
-    const fetchedPublicKey = await fetchPublicKeyFromVault();
-    if (!fetchedPublicKey) {
+    try {
+        printStep(`[Vault] POST to Vault at ${url}...`);
+        const res = await axios.post(url, {
+            service: SERVICE_NAME
+        });
+
+        const key = res?.data?.publicKey;
+
+        if (!key || !key.startsWith('-----BEGIN PUBLIC KEY-----')) {
+            printError('[Auth] ❌ Invalid public key received from Vault');
+            authMode = 'fail';
+            return false;
+        }
+
+        cachedPublicKey = key;
+        authMode = 'public';
+
+        printDebug('[Auth] ✅ Fetched and received public key from Vault');
+        printResult('[Auth] ✅ Public key stored for JWT verification');
+        return true;
+    } catch (err) {
+        printError('[Vault] Error during POST to Vault: ' + (err?.message || 'Unknown Error'));
         printError('[Auth] ❌ Failed to retrieve public key from Vault');
+        authMode = 'fail';
         return false;
     }
-
-    const isValid = await checkKeyPair(privateKey, fetchedPublicKey);
-    if (!isValid) {
-        printError('[Auth] ❌ JWT key pair failed verification');
-        return false;
-    }
-
-    publicKeyInMemory = fetchedPublicKey;
-    printResult('[Auth] ✅ JWT keys verified and stored in memory');
-    return true;
 }
 
 /**
- * Getter for the currently loaded public key (after init).
+ * Returns the currently cached public key string.
+ *
+ * @returns {string|null}
  */
 export function getPublicKeyFromMemory() {
-    return publicKeyInMemory;
+    return cachedPublicKey;
+}
+
+/**
+ * Returns the current auth mode (public, token, fail, unknown).
+ *
+ * @returns {string}
+ */
+export function getAuthMode() {
+    return authMode;
 }
